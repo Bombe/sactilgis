@@ -11,4 +11,24 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil
  */
 class SimpleSVN(svnUrl: SVNURL) {
 
+	fun createCommit(username: String, commitConsumer: (SimpleCommit) -> Unit): SVNCommitInfo {
+		val simpleCommit = SimpleCommit(username)
+		commitConsumer(simpleCommit)
+		return simpleCommit.commit()
+	}
+
+	private val svnRepository: SVNRepository = SVNRepositoryFactory.create(svnUrl)
+
+	inner class SimpleCommit(private val username: String) {
+
+		internal fun commit(): SVNCommitInfo {
+			svnRepository.authenticationManager = SVNWCUtil.createDefaultAuthenticationManager(username, charArrayOf())
+			val latestRevision: Long = svnRepository.latestRevision
+			val commitEditor = svnRepository.getCommitEditor("", null, false, null)
+			commitEditor.openRoot(latestRevision)
+			return commitEditor.closeEdit()
+		}
+
+	}
+
 }
