@@ -9,6 +9,7 @@ import org.tmatesoft.svn.core.SVNLogEntry
 import org.tmatesoft.svn.core.SVNNodeKind
 import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory
+import org.tmatesoft.svn.core.io.SVNLocationEntry
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
 import java.io.File
 import java.nio.file.Files
@@ -41,12 +42,41 @@ class SimpleSVNTest {
 
 	@Test
 	fun `SimpleSVN can create directory in commit`() {
-		simpleSvn.createCommit("testuser", "add directory") { commit ->
-			commit.addDirectory("/test")
-		}
+		addTestDirectory()
 		val svnRepository = FSRepositoryFactory.create(svnUrl)
 		val nodeKind = svnRepository.checkPath("/test", 1)
 		assertThat(nodeKind, equalTo(SVNNodeKind.DIR))
+	}
+
+	@Test
+	fun `SimpleSVN can copy directory in commit`() {
+		addTestDirectory()
+		copyTestDirectoryToTest2()
+		val svnRepository = FSRepositoryFactory.create(svnUrl)
+		val nodeKind = svnRepository.checkPath("/test2", 2)
+		assertThat(nodeKind, equalTo(SVNNodeKind.DIR))
+	}
+
+	@Test
+	fun `SimpleSVN can copy directory in commit while keeping history`() {
+		addTestDirectory()
+		copyTestDirectoryToTest2()
+		val svnRepository = FSRepositoryFactory.create(svnUrl)
+		val locationEntries = mutableListOf<SVNLocationEntry>()
+		svnRepository.getLocations("/test2", 2, longArrayOf(1), locationEntries::add)
+		assertThat(locationEntries.single().path, equalTo("/test"))
+	}
+
+	private fun addTestDirectory() {
+		simpleSvn.createCommit("testuser", "add directory") { commit ->
+			commit.addDirectory("/test")
+		}
+	}
+
+	private fun copyTestDirectoryToTest2() {
+		simpleSvn.createCommit("testuser", "copy directory") { commit ->
+			commit.copyDirectory("/test2", "test", 1);
+		}
 	}
 
 	private fun createSvnRepository(directory: File): SVNURL =
