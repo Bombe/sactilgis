@@ -87,6 +87,7 @@
 
 	<modules>
 		<module>svn-utils</module>
+		<module>app</module>
 	</modules>
 
 </project>
