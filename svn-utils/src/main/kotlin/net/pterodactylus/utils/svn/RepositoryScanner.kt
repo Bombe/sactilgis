@@ -14,17 +14,31 @@ class RepositoryScanner(svnUrl: SVNURL) {
 
 	fun identifyBranches(): RepositoryInformation {
 		val branchRevisions = mutableMapOf<String, TreeSet<Long>>()
+		val branchCreationPoints = mutableMapOf<String, Pair<String, Long>>()
 		val latestRevision = svnRepository.latestRevision
 
 		LongRange(1, latestRevision).forEach { revision ->
-			simpleSvn.getLogEntry("/", revision)!!
+			val logEntry = simpleSvn.getLogEntry("/", revision)!!
+			logEntry
 				.changedPaths.keys
 				.mapNotNull { path -> findBranchByPathAndRevision(path, revision) }
 				.distinct()
-				.forEach { branch -> branchRevisions.getOrPut(branch) { TreeSet() }.add(revision) }
+				.forEach { branch ->
+					if (branch !in branchRevisions) {
+						val path = findPathForBranchAtRevision(branch, revision)
+						logEntry.changedPaths[path]?.let { branchPath ->
+							if (branchPath.copyRevision != -1L) {
+								val sourceBranch = findBranchByPathAndRevision(branchPath.copyPath, branchPath.copyRevision)!!
+								val lastRevisionOnSourceBranch = branchRevisions[sourceBranch]!!.floor(branchPath.copyRevision)!!
+								branchCreationPoints[branch] = branchPath.copyPath to lastRevisionOnSourceBranch
+							}
+						}
+					}
+					branchRevisions.getOrPut(branch) { TreeSet() }.add(revision)
+				}
 		}
 
-		return RepositoryInformation(latestRevision, branchRevisions)
+		return RepositoryInformation(latestRevision, branchRevisions, branchCreationPoints)
 	}
 
 	private fun findBranchByPathAndRevision(path: String, revision: Long): String? =
@@ -34,6 +48,11 @@ class RepositoryScanner(svnUrl: SVNURL) {
 			.filterValues { p -> path.startsWith(p!!) }
 			.keys.singleOrNull()
 
+	private fun findPathForBranchAtRevision(branch: String, revision: Long): String? =
+		branchDefinitions[branch]
+			?.floorEntry(revision)
+			?.value
+
 	private val simpleSvn = SimpleSVN(svnUrl)
 	private val svnRepository = SVNRepositoryFactory.create(svnUrl)
 
@@ -41,7 +60,7 @@ class RepositoryScanner(svnUrl: SVNURL) {
 
 }
 
-data class RepositoryInformation(val latestRevision: Long, val brachRevisions: Map<String, SortedSet<Long>>)
+data class RepositoryInformation(val latestRevision: Long, val brachRevisions: Map<String, SortedSet<Long>>, val branchCreationPoints: Map<String, Pair<String, Long>>)
 
 private operator fun Pair<Long, Long>.contains(value: Long) =
 	if (second != -1L) {

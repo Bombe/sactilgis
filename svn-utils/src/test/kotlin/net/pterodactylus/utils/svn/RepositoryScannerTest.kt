@@ -81,6 +81,25 @@ class RepositoryScannerTest {
 		)
 	}
 
+	@Test
+	fun `repository scanner identifies branch creation points correctly`() {
+		simpleSvn.createCommit("testuser", "create directory") { it.addDirectory("/main") }
+		simpleSvn.createCommit("testuser", "create directory") { it.addDirectory("/main/foo") }
+		simpleSvn.createCommit("testuser", "create directory") { it.addDirectory("/main/bar") }
+		simpleSvn.createCommit("testuser", "create directory") { it.copyDirectory("/foo", "/main/foo", 2) }
+		simpleSvn.createCommit("testuser", "create directory") { it.addDirectory("/main/baz") }
+		simpleSvn.createCommit("testuser", "create directory") { it.addDirectory("/foo/foo2") }
+		simpleSvn.createCommit("testuser", "create directory") { it.copyDirectory("/bar", "/main/bar", 6) }
+		repositoryScanner.addBranch("main", 0L to "/main")
+		repositoryScanner.addBranch("foo", 4L to "/foo")
+		repositoryScanner.addBranch("bar", 7L to "/bar")
+		val repositoryInformation = repositoryScanner.identifyBranches()
+		assertThat(repositoryInformation.branchCreationPoints, allOf(
+			hasEntry(equalTo("foo"), equalTo("/main/foo" to 2L)),
+			hasEntry(equalTo("bar"), equalTo("/main/bar" to 5L))
+		))
+	}
+
 	private fun createTwoSimpleRepositories() {
 		simpleSvn.createCommit("testuser", "create directory") { commit ->
 			commit.addDirectory("/project1")
