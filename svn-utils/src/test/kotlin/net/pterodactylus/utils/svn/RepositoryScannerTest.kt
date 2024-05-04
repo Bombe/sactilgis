@@ -20,7 +20,7 @@ class RepositoryScannerTest {
 		createTwoSimpleRepositories()
 		repositoryScanner.addBranch("p1", "/project1" to (0L to -1))
 		repositoryScanner.addBranch("p2", "/project2" to (0L to -1))
-		val branches: Map<String, List<Long>> = repositoryScanner.identifyBranches()
+		val branches = repositoryScanner.identifyBranches()
 		assertThat(
 			branches, allOf(
 				hasEntry(equalTo("p1"), contains(1, 3)),
@@ -33,7 +33,7 @@ class RepositoryScannerTest {
 	fun `repository scanner can handle outside-of-any-project revisions`() {
 		createTwoSimpleRepositories()
 		repositoryScanner.addBranch("p1", "/project1" to (0L to -1))
-		val branches: Map<String, List<Long>> = repositoryScanner.identifyBranches()
+		val branches = repositoryScanner.identifyBranches()
 		assertThat(
 			branches, allOf(
 				hasEntry(equalTo("p1"), contains(1, 3))

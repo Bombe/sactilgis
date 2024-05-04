@@ -2,6 +2,8 @@ package net.pterodactylus.utils.svn
 
 import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
+import java.util.SortedSet
+import java.util.TreeSet
 
 class RepositoryScanner(svnUrl: SVNURL) {
 
@@ -9,8 +11,8 @@ class RepositoryScanner(svnUrl: SVNURL) {
 		branchDefinitions.merge(name, pathRanges.toList()) { l1, l2 -> l1 + l2 }
 	}
 
-	fun identifyBranches(): Map<String, List<Long>> {
-		val branchRevisions = mutableMapOf<String, MutableList<Long>>()
+	fun identifyBranches(): Map<String, SortedSet<Long>> {
+		val branchRevisions = mutableMapOf<String, TreeSet<Long>>()
 		val latestRevision = svnRepository.latestRevision
 
 		LongRange(1, latestRevision).forEach { revision ->
@@ -18,7 +20,7 @@ class RepositoryScanner(svnUrl: SVNURL) {
 				.changedPaths.keys
 				.mapNotNull { path -> findBranchByPathAndRevision(path, revision) }
 				.distinct()
-				.forEach { branch -> branchRevisions.getOrPut(branch) { mutableListOf() }.add(revision) }
+				.forEach { branch -> branchRevisions.getOrPut(branch) { TreeSet() }.add(revision) }
 		}
 
 		return branchRevisions
