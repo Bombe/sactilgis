@@ -18,7 +18,6 @@ class RepositoryScannerTest {
 	@Test
 	fun `repository scanner identifies branch correctly`() {
 		createTwoSimpleRepositories()
-		val repositoryScanner = RepositoryScanner(svnUrl)
 		repositoryScanner.addBranch("p1", "/project1" to (0L to -1))
 		repositoryScanner.addBranch("p2", "/project2" to (0L to -1))
 		val branches: Map<String, List<Long>> = repositoryScanner.identifyBranches()
@@ -33,7 +32,6 @@ class RepositoryScannerTest {
 	@Test
 	fun `repository scanner can handle outside-of-any-project revisions`() {
 		createTwoSimpleRepositories()
-		val repositoryScanner = RepositoryScanner(svnUrl)
 		repositoryScanner.addBranch("p1", "/project1" to (0L to -1))
 		val branches: Map<String, List<Long>> = repositoryScanner.identifyBranches()
 		assertThat(
@@ -63,5 +61,6 @@ class RepositoryScannerTest {
 	private lateinit var temporaryDirectory: Path
 	private val svnUrl by lazy { createSvnRepository(Files.createTempDirectory(temporaryDirectory, "svn-repo").toFile()) }
 	private val simpleSvn by lazy { SimpleSVN(svnUrl) }
+	private val repositoryScanner by lazy { RepositoryScanner(svnUrl) }
 
 }
