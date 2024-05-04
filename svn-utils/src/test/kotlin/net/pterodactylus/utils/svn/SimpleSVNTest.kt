@@ -75,10 +75,7 @@ class SimpleSVNTest {
 	@Test
 	fun `SimpleSVN can create file with content in repository`() {
 		addREADME()
-		ByteArrayOutputStream().use { outputStream ->
-			svnRepository.getFile("/README", 1, null, outputStream)
-			assertThat(outputStream.toByteArray().decodeToString(), equalTo("the best project ever!\n"))
-		}
+		assertThat(getFileContent("/README", 1), equalTo("the best project ever!\n"))
 	}
 
 	@Test
@@ -93,10 +90,7 @@ class SimpleSVNTest {
 	fun `SimpleSVN can copy file with content in repository`() {
 		addREADME()
 		copyREADMEtoREADMEmd()
-		ByteArrayOutputStream().use { outputStream ->
-			svnRepository.getFile("/README.md", 2, null, outputStream)
-			assertThat(outputStream.toByteArray().decodeToString(), equalTo("the best project ever!\n"))
-		}
+		assertThat(getFileContent("/README.md", 2), equalTo("the best project ever!\n"))
 	}
 
 	@Test
@@ -105,10 +99,7 @@ class SimpleSVNTest {
 		simpleSvn.createCommit("testuser", "edit README") { commit ->
 			commit.editFile("/README", "really, best project.\n".byteInputStream())
 		}
-		ByteArrayOutputStream().use { outputStream ->
-			svnRepository.getFile("/README", 2, null, outputStream)
-			assertThat(outputStream.toByteArray().decodeToString(), equalTo("really, best project.\n"))
-		}
+		assertThat(getFileContent("/README", 2), equalTo("really, best project.\n"))
 	}
 
 	private fun addTestDirectory() {
@@ -133,6 +124,11 @@ class SimpleSVNTest {
 		simpleSvn.createCommit("testuser", "copy README") { commit ->
 			commit.copyFile("/README.md", "/README", 1)
 		}
+	}
+
+	private fun getFileContent(path: String, revision: Long): String = ByteArrayOutputStream().use { outputStream ->
+		svnRepository.getFile(path, revision, null, outputStream)
+		return outputStream.toByteArray().decodeToString()
 	}
 
 	private fun createSvnRepository(directory: File): SVNURL =
