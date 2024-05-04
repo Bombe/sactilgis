@@ -20,9 +20,9 @@ class RepositoryScannerTest {
 		createTwoSimpleRepositories()
 		repositoryScanner.addBranch("p1", 0L to "/project1")
 		repositoryScanner.addBranch("p2", 0L to "/project2")
-		val branches = repositoryScanner.identifyBranches()
+		val repositoryInformation = repositoryScanner.identifyBranches()
 		assertThat(
-			branches, allOf(
+			repositoryInformation.brachRevisions, allOf(
 				hasEntry(equalTo("p1"), contains(1, 3)),
 				hasEntry(equalTo("p2"), contains(2, 4))
 			)
@@ -33,9 +33,9 @@ class RepositoryScannerTest {
 	fun `repository scanner can handle outside-of-any-project revisions`() {
 		createTwoSimpleRepositories()
 		repositoryScanner.addBranch("p1", 0L to "/project1")
-		val branches = repositoryScanner.identifyBranches()
+		val repositoryInformation = repositoryScanner.identifyBranches()
 		assertThat(
-			branches, allOf(
+			repositoryInformation.brachRevisions, allOf(
 				hasEntry(equalTo("p1"), contains(1, 3))
 			)
 		)
@@ -54,9 +54,9 @@ class RepositoryScannerTest {
 			commit.deletePath("/project1")
 		}
 		repositoryScanner.addBranch("p1", 0L to "/project1", 6L to "/trunk/project1")
-		val branches = repositoryScanner.identifyBranches()
+		val repositoryInformation = repositoryScanner.identifyBranches()
 		assertThat(
-			branches, allOf(
+			repositoryInformation.brachRevisions, allOf(
 				hasEntry(equalTo("p1"), contains(1, 3, 6))
 			)
 		)
@@ -66,9 +66,9 @@ class RepositoryScannerTest {
 	fun `repository scanner can handle branch that does not exist at start of repository`() {
 		createTwoSimpleRepositories()
 		repositoryScanner.addBranch("p2", 2L to "/project2")
-		val branches = repositoryScanner.identifyBranches()
+		val repositoryInformation = repositoryScanner.identifyBranches()
 		assertThat(
-			branches, allOf(
+			repositoryInformation.brachRevisions, allOf(
 				hasEntry(equalTo("p2"), contains(2, 4))
 			)
 		)
