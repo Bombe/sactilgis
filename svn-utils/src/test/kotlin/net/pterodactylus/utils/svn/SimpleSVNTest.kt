@@ -102,6 +102,26 @@ class SimpleSVNTest {
 		assertThat(getFileContent("/README", 2), equalTo("really, best project.\n"))
 	}
 
+	@Test
+	fun `SimpleSVN can delete file in repository`() {
+		addREADME()
+		simpleSvn.createCommit("testuser", "delete README") { commit ->
+			commit.deletePath("/README")
+		}
+		val nodeKind = svnRepository.checkPath("/README", 2)
+		assertThat(nodeKind, equalTo(SVNNodeKind.NONE))
+	}
+
+	@Test
+	fun `SimpleSVN can delete directory in repository`() {
+		addTestDirectory()
+		simpleSvn.createCommit("testuser", "delete README") { commit ->
+			commit.deletePath("/test")
+		}
+		val nodeKind = svnRepository.checkPath("/test", 2)
+		assertThat(nodeKind, equalTo(SVNNodeKind.NONE))
+	}
+
 	private fun addTestDirectory() {
 		simpleSvn.createCommit("testuser", "add directory") { commit ->
 			commit.addDirectory("/test")

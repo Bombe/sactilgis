@@ -44,6 +44,10 @@ class SimpleSVN(svnUrl: SVNURL) {
 			filesToCopy.add(Triple(path, source, revision))
 		}
 
+		fun deletePath(path: String) {
+			pathsToDelete.add(path)
+		}
+
 		internal fun commit(): SVNCommitInfo {
 			svnRepository.authenticationManager = SVNWCUtil.createDefaultAuthenticationManager(username, charArrayOf())
 			val latestRevision: Long = svnRepository.latestRevision
@@ -59,6 +63,7 @@ class SimpleSVN(svnUrl: SVNURL) {
 				commitEditor.applyTextDelta(path, null)
 				SVNDeltaGenerator().sendDelta(path, content, commitEditor, true)
 			}
+			pathsToDelete.forEach { path -> commitEditor.deleteEntry(path, -1) }
 			return commitEditor.closeEdit()
 		}
 
@@ -67,6 +72,7 @@ class SimpleSVN(svnUrl: SVNURL) {
 		private val filesToAdd = mutableListOf<String>()
 		private val filesToEdit = mutableListOf<Pair<String, InputStream>>()
 		private val filesToCopy = mutableListOf<Triple<String, String, Long>>()
+		private val pathsToDelete = mutableListOf<String>()
 
 	}
 
