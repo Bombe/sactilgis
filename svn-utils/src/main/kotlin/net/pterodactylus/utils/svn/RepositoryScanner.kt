@@ -29,9 +29,9 @@ class RepositoryScanner(svnUrl: SVNURL) {
 
 	private fun findBranchByPathAndRevision(path: String, revision: Long): String? =
 		branchDefinitions
-			.mapValues { (_, revisionPaths) -> revisionPaths.floorEntry(revision).value }
+			.mapValues { (_, revisionPaths) -> revisionPaths.floorEntry(revision)?.value }
 			.filter { it.value != null }
-			.filterValues { p -> path.startsWith(p) }
+			.filterValues { p -> path.startsWith(p!!) }
 			.keys.singleOrNull()
 
 	private val simpleSvn = SimpleSVN(svnUrl)

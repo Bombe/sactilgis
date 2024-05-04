@@ -62,6 +62,18 @@ class RepositoryScannerTest {
 		)
 	}
 
+	@Test
+	fun `repository scanner can handle branch that does not exist at start of repository`() {
+		createTwoSimpleRepositories()
+		repositoryScanner.addBranch("p2", 2L to "/project2")
+		val branches = repositoryScanner.identifyBranches()
+		assertThat(
+			branches, allOf(
+				hasEntry(equalTo("p2"), contains(2, 4))
+			)
+		)
+	}
+
 	private fun createTwoSimpleRepositories() {
 		simpleSvn.createCommit("testuser", "create directory") { commit ->
 			commit.addDirectory("/project1")
