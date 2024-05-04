@@ -11,6 +11,7 @@ import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory
 import org.tmatesoft.svn.core.io.SVNLocationEntry
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -67,6 +68,24 @@ class SimpleSVNTest {
 		assertThat(locationEntries.single().path, equalTo("/test"))
 	}
 
+	@Test
+	fun `SimpleSVN can create file in repository`() {
+		addREADME()
+		val svnRepository = FSRepositoryFactory.create(svnUrl)
+		val nodeKind = svnRepository.checkPath("/README", 1)
+		assertThat(nodeKind, equalTo(SVNNodeKind.FILE))
+	}
+
+	@Test
+	fun `SimpleSVN can create file with content in repository`() {
+		addREADME()
+		val svnRepository = FSRepositoryFactory.create(svnUrl)
+		ByteArrayOutputStream().use { outputStream ->
+			svnRepository.getFile("/README", 1, null, outputStream)
+			assertThat(outputStream.toByteArray().decodeToString(), equalTo("the best project ever!\n"))
+		}
+	}
+
 	private fun addTestDirectory() {
 		simpleSvn.createCommit("testuser", "add directory") { commit ->
 			commit.addDirectory("/test")
@@ -76,6 +95,12 @@ class SimpleSVNTest {
 	private fun copyTestDirectoryToTest2() {
 		simpleSvn.createCommit("testuser", "copy directory") { commit ->
 			commit.copyDirectory("/test2", "test", 1);
+		}
+	}
+
+	private fun addREADME() {
+		simpleSvn.createCommit("testuser", "add a file") { commit ->
+			commit.addFile("/README", "the best project ever!\n".byteInputStream())
 		}
 	}
 
