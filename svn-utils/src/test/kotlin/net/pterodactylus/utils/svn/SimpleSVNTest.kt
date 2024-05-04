@@ -10,6 +10,7 @@ import org.tmatesoft.svn.core.SVNNodeKind
 import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory
 import org.tmatesoft.svn.core.io.SVNLocationEntry
+import org.tmatesoft.svn.core.io.SVNRepository
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -35,7 +36,6 @@ class SimpleSVNTest {
 	fun `SimpleSVN can create commit with username and log message but without content`() {
 		simpleSvn.createCommit("testuser", "first commit") { _ ->
 		}
-		val svnRepository = FSRepositoryFactory.create(svnUrl)
 		val logEntries = mutableListOf<SVNLogEntry>()
 		svnRepository.log(arrayOf("/"), -1, -1, false, false, logEntries::add)
 		assertThat(logEntries.single().message, equalTo("first commit"))
@@ -44,7 +44,6 @@ class SimpleSVNTest {
 	@Test
 	fun `SimpleSVN can create directory in commit`() {
 		addTestDirectory()
-		val svnRepository = FSRepositoryFactory.create(svnUrl)
 		val nodeKind = svnRepository.checkPath("/test", 1)
 		assertThat(nodeKind, equalTo(SVNNodeKind.DIR))
 	}
@@ -53,7 +52,6 @@ class SimpleSVNTest {
 	fun `SimpleSVN can copy directory in commit`() {
 		addTestDirectory()
 		copyTestDirectoryToTest2()
-		val svnRepository = FSRepositoryFactory.create(svnUrl)
 		val nodeKind = svnRepository.checkPath("/test2", 2)
 		assertThat(nodeKind, equalTo(SVNNodeKind.DIR))
 	}
@@ -62,7 +60,6 @@ class SimpleSVNTest {
 	fun `SimpleSVN can copy directory in commit while keeping history`() {
 		addTestDirectory()
 		copyTestDirectoryToTest2()
-		val svnRepository = FSRepositoryFactory.create(svnUrl)
 		val locationEntries = mutableListOf<SVNLocationEntry>()
 		svnRepository.getLocations("/test2", 2, longArrayOf(1), locationEntries::add)
 		assertThat(locationEntries.single().path, equalTo("/test"))
@@ -71,7 +68,6 @@ class SimpleSVNTest {
 	@Test
 	fun `SimpleSVN can create file in repository`() {
 		addREADME()
-		val svnRepository = FSRepositoryFactory.create(svnUrl)
 		val nodeKind = svnRepository.checkPath("/README", 1)
 		assertThat(nodeKind, equalTo(SVNNodeKind.FILE))
 	}
@@ -79,7 +75,6 @@ class SimpleSVNTest {
 	@Test
 	fun `SimpleSVN can create file with content in repository`() {
 		addREADME()
-		val svnRepository = FSRepositoryFactory.create(svnUrl)
 		ByteArrayOutputStream().use { outputStream ->
 			svnRepository.getFile("/README", 1, null, outputStream)
 			assertThat(outputStream.toByteArray().decodeToString(), equalTo("the best project ever!\n"))
@@ -90,7 +85,6 @@ class SimpleSVNTest {
 	fun `SimpleSVN can copy file in repository`() {
 		addREADME()
 		copyREADMEtoREADMEmd()
-		val svnRepository = FSRepositoryFactory.create(svnUrl)
 		val nodeKind = svnRepository.checkPath("/README.md", 2)
 		assertThat(nodeKind, equalTo(SVNNodeKind.FILE))
 	}
@@ -99,7 +93,6 @@ class SimpleSVNTest {
 	fun `SimpleSVN can copy file with content in repository`() {
 		addREADME()
 		copyREADMEtoREADMEmd()
-		val svnRepository = FSRepositoryFactory.create(svnUrl)
 		ByteArrayOutputStream().use { outputStream ->
 			svnRepository.getFile("/README.md", 2, null, outputStream)
 			assertThat(outputStream.toByteArray().decodeToString(), equalTo("the best project ever!\n"))
@@ -137,5 +130,6 @@ class SimpleSVNTest {
 	private lateinit var temporaryDirectory: Path
 	private val svnUrl by lazy { createSvnRepository(Files.createTempDirectory(temporaryDirectory, "svn-repo").toFile()) }
 	private val simpleSvn by lazy { SimpleSVN(svnUrl) }
+	private val svnRepository: SVNRepository by lazy { FSRepositoryFactory.create(svnUrl) }
 
 }
