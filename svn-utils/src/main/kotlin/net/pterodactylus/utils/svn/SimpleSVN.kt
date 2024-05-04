@@ -21,13 +21,20 @@ class SimpleSVN(svnUrl: SVNURL) {
 
 	inner class SimpleCommit(private val username: String, private val logMessage: String) {
 
+		fun addDirectory(path: String) {
+			directoriesToAdd.add(path)
+		}
+
 		internal fun commit(): SVNCommitInfo {
 			svnRepository.authenticationManager = SVNWCUtil.createDefaultAuthenticationManager(username, charArrayOf())
 			val latestRevision: Long = svnRepository.latestRevision
 			val commitEditor = svnRepository.getCommitEditor(logMessage, null, false, null)
 			commitEditor.openRoot(latestRevision)
+			directoriesToAdd.forEach { path -> commitEditor.addDir(path, null, -1) }
 			return commitEditor.closeEdit()
 		}
+
+		private val directoriesToAdd = mutableListOf<String>()
 
 	}
 

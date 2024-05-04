@@ -6,6 +6,7 @@ import org.hamcrest.Matchers.notNullValue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.tmatesoft.svn.core.SVNLogEntry
+import org.tmatesoft.svn.core.SVNNodeKind
 import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
@@ -36,6 +37,16 @@ class SimpleSVNTest {
 		val logEntries = mutableListOf<SVNLogEntry>()
 		svnRepository.log(arrayOf("/"), -1, -1, false, false, logEntries::add)
 		assertThat(logEntries.single().message, equalTo("first commit"))
+	}
+
+	@Test
+	fun `SimpleSVN can create directory in commit`() {
+		simpleSvn.createCommit("testuser", "add directory") { commit ->
+			commit.addDirectory("/test")
+		}
+		val svnRepository = FSRepositoryFactory.create(svnUrl)
+		val nodeKind = svnRepository.checkPath("/test", 1)
+		assertThat(nodeKind, equalTo(SVNNodeKind.DIR))
 	}
 
 	private fun createSvnRepository(directory: File): SVNURL =
