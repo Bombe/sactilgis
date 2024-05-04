@@ -41,6 +41,27 @@ class RepositoryScannerTest {
 		)
 	}
 
+	@Test
+	fun `repository scanner can handle project that is moving around in repository`() {
+		createTwoSimpleRepositories()
+		simpleSvn.createCommit("testuser", "adding standard layout") { commit ->
+			commit.addDirectory("/branches")
+			commit.addDirectory("/tags")
+			commit.addDirectory("/trunk")
+		}
+		simpleSvn.createCommit("testuser", "move project1") { commit ->
+			commit.copyDirectory("/trunk/project1", "/project1", 5)
+			commit.deletePath("/project1")
+		}
+		repositoryScanner.addBranch("p1", "/project1" to (0L to 5), "/trunk/project1" to (6L to -1))
+		val branches = repositoryScanner.identifyBranches()
+		assertThat(
+			branches, allOf(
+				hasEntry(equalTo("p1"), contains(1, 3, 6))
+			)
+		)
+	}
+
 	private fun createTwoSimpleRepositories() {
 		simpleSvn.createCommit("testuser", "create directory") { commit ->
 			commit.addDirectory("/project1")
