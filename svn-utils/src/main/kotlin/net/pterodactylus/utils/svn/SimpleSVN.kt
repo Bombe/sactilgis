@@ -1,10 +1,14 @@
 package net.pterodactylus.utils.svn
 
 import org.tmatesoft.svn.core.SVNCommitInfo
+import org.tmatesoft.svn.core.SVNErrorCode
+import org.tmatesoft.svn.core.SVNException
+import org.tmatesoft.svn.core.SVNLogEntry
 import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.io.SVNRepository
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
 import org.tmatesoft.svn.core.io.diff.SVNDeltaGenerator
+import org.tmatesoft.svn.core.wc.SVNRevision
 import org.tmatesoft.svn.core.wc.SVNWCUtil
 import java.io.InputStream
 
@@ -15,6 +19,19 @@ class SimpleSVN(svnUrl: SVNURL) {
 
 	fun createCommit(username: String, logMessage: String, commitConsumer: (SimpleCommit) -> Unit) =
 		SimpleCommit(username, logMessage).also(commitConsumer).commit()
+
+	fun getLogEntry(path: String, revision: Long): SVNLogEntry? {
+		val logEntries = mutableListOf<SVNLogEntry>()
+		try {
+			svnRepository.log(arrayOf(path), revision, revision, true, false, logEntries::add)
+			return logEntries.singleOrNull()
+		} catch (svnException: SVNException) {
+			if (svnException.errorMessage.errorCode == SVNErrorCode.FS_NOT_FOUND) {
+				return null
+			}
+			throw svnException
+		}
+	}
 
 	private val svnRepository: SVNRepository = SVNRepositoryFactory.create(svnUrl)
 

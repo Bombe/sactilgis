@@ -2,7 +2,9 @@ package net.pterodactylus.utils.svn
 
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.notNullValue
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.tmatesoft.svn.core.SVNLogEntry
@@ -120,6 +122,27 @@ class SimpleSVNTest {
 		}
 		val nodeKind = svnRepository.checkPath("/test", 2)
 		assertThat(nodeKind, equalTo(SVNNodeKind.NONE))
+	}
+
+	@Test
+	fun `SimpleSVN can provide log entry for an existing path in a revision`() {
+		addTestDirectory()
+		val logEntry = simpleSvn.getLogEntry("/test", 1)
+		assertThat(logEntry!!.message, equalTo("add directory"))
+	}
+
+	@Test
+	fun `SimpleSVN returns null entry if path does not exist in revision`() {
+		addTestDirectory()
+		val logEntry = simpleSvn.getLogEntry("/test2", 1)
+		assertThat(logEntry, nullValue())
+	}
+
+	@Test
+	fun `SimpleSVN provides changed paths in log entry`() {
+		addTestDirectory()
+		val logEntry = simpleSvn.getLogEntry("/test", 1)
+		assertThat(logEntry!!.changedPaths, not(emptyMap()))
 	}
 
 	private fun addTestDirectory() {
