@@ -35,6 +35,10 @@ class SimpleSVN(svnUrl: SVNURL) {
 			filesToAdd.add(path to content)
 		}
 
+		fun copyFile(path: String, source: String, revision: Long) {
+			filesToCopy.add(Triple(path, source, revision))
+		}
+
 		internal fun commit(): SVNCommitInfo {
 			svnRepository.authenticationManager = SVNWCUtil.createDefaultAuthenticationManager(username, charArrayOf())
 			val latestRevision: Long = svnRepository.latestRevision
@@ -42,6 +46,7 @@ class SimpleSVN(svnUrl: SVNURL) {
 			commitEditor.openRoot(latestRevision)
 			directoriesToAdd.forEach { path -> commitEditor.addDir(path, null, -1) }
 			directoriesToCopy.forEach { (path, source, revision) -> commitEditor.addDir(path, source, revision) }
+			filesToCopy.forEach { (path, source, revision) -> commitEditor.addFile(path, source, revision) }
 			filesToAdd.forEach { (path, content) ->
 				commitEditor.addFile(path, null, -1)
 				commitEditor.applyTextDelta(path, null)
@@ -53,6 +58,7 @@ class SimpleSVN(svnUrl: SVNURL) {
 		private val directoriesToAdd = mutableListOf<String>()
 		private val directoriesToCopy = mutableListOf<Triple<String, String, Long>>()
 		private val filesToAdd = mutableListOf<Pair<String, InputStream>>()
+		private val filesToCopy = mutableListOf<Triple<String, String, Long>>()
 
 	}
 

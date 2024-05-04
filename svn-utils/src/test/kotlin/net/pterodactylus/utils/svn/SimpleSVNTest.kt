@@ -86,6 +86,26 @@ class SimpleSVNTest {
 		}
 	}
 
+	@Test
+	fun `SimpleSVN can copy file in repository`() {
+		addREADME()
+		copyREADMEtoREADMEmd()
+		val svnRepository = FSRepositoryFactory.create(svnUrl)
+		val nodeKind = svnRepository.checkPath("/README.md", 2)
+		assertThat(nodeKind, equalTo(SVNNodeKind.FILE))
+	}
+
+	@Test
+	fun `SimpleSVN can copy file with content in repository`() {
+		addREADME()
+		copyREADMEtoREADMEmd()
+		val svnRepository = FSRepositoryFactory.create(svnUrl)
+		ByteArrayOutputStream().use { outputStream ->
+			svnRepository.getFile("/README.md", 2, null, outputStream)
+			assertThat(outputStream.toByteArray().decodeToString(), equalTo("the best project ever!\n"))
+		}
+	}
+
 	private fun addTestDirectory() {
 		simpleSvn.createCommit("testuser", "add directory") { commit ->
 			commit.addDirectory("/test")
@@ -101,6 +121,12 @@ class SimpleSVNTest {
 	private fun addREADME() {
 		simpleSvn.createCommit("testuser", "add a file") { commit ->
 			commit.addFile("/README", "the best project ever!\n".byteInputStream())
+		}
+	}
+
+	private fun copyREADMEtoREADMEmd() {
+		simpleSvn.createCommit("testuser", "copy README") { commit ->
+			commit.copyFile("/README.md", "/README", 1)
 		}
 	}
 
