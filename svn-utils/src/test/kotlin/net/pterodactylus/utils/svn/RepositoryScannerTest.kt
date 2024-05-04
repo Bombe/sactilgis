@@ -25,8 +25,8 @@ class RepositoryScannerTest {
 	@Test
 	fun `repository scanner identifies branch correctly`() {
 		createTwoSimpleRepositories()
-		repositoryScanner.addBranch("p1", 0L to "/project1")
-		repositoryScanner.addBranch("p2", 0L to "/project2")
+		repositoryScanner.addBranch("p1", BranchDefinition(0L to "/project1"))
+		repositoryScanner.addBranch("p2", BranchDefinition(0L to "/project2"))
 		val repositoryInformation = repositoryScanner.identifyBranches()
 		assertThat(
 			repositoryInformation.brachRevisions, allOf(
@@ -39,7 +39,7 @@ class RepositoryScannerTest {
 	@Test
 	fun `repository scanner can handle outside-of-any-project revisions`() {
 		createTwoSimpleRepositories()
-		repositoryScanner.addBranch("p1", 0L to "/project1")
+		repositoryScanner.addBranch("p1", BranchDefinition(0L to "/project1"))
 		val repositoryInformation = repositoryScanner.identifyBranches()
 		assertThat(
 			repositoryInformation.brachRevisions, allOf(
@@ -60,7 +60,7 @@ class RepositoryScannerTest {
 			commit.copyDirectory("/trunk/project1", "/project1", 5)
 			commit.deletePath("/project1")
 		}
-		repositoryScanner.addBranch("p1", 0L to "/project1", 6L to "/trunk/project1")
+		repositoryScanner.addBranch("p1", BranchDefinition(0L to "/project1", 6L to "/trunk/project1"))
 		val repositoryInformation = repositoryScanner.identifyBranches()
 		assertThat(
 			repositoryInformation.brachRevisions, allOf(
@@ -72,7 +72,7 @@ class RepositoryScannerTest {
 	@Test
 	fun `repository scanner can handle branch that does not exist at start of repository`() {
 		createTwoSimpleRepositories()
-		repositoryScanner.addBranch("p2", 2L to "/project2")
+		repositoryScanner.addBranch("p2", BranchDefinition(2L to "/project2"))
 		val repositoryInformation = repositoryScanner.identifyBranches()
 		assertThat(
 			repositoryInformation.brachRevisions, allOf(
@@ -90,14 +90,16 @@ class RepositoryScannerTest {
 		simpleSvn.createCommit("testuser", "create directory") { it.addDirectory("/main/baz") }
 		simpleSvn.createCommit("testuser", "create directory") { it.addDirectory("/foo/foo2") }
 		simpleSvn.createCommit("testuser", "create directory") { it.copyDirectory("/bar", "/main/bar", 6) }
-		repositoryScanner.addBranch("main", 0L to "/main")
-		repositoryScanner.addBranch("foo", 4L to "/foo")
-		repositoryScanner.addBranch("bar", 7L to "/bar")
+		repositoryScanner.addBranch("main", BranchDefinition(0L to "/main"))
+		repositoryScanner.addBranch("foo", BranchDefinition(4L to "/foo"))
+		repositoryScanner.addBranch("bar", BranchDefinition(7L to "/bar"))
 		val repositoryInformation = repositoryScanner.identifyBranches()
-		assertThat(repositoryInformation.branchCreationPoints, allOf(
-			hasEntry(equalTo("foo"), equalTo("/main/foo" to 2L)),
-			hasEntry(equalTo("bar"), equalTo("/main/bar" to 5L))
-		))
+		assertThat(
+			repositoryInformation.branchCreationPoints, allOf(
+				hasEntry(equalTo("foo"), equalTo("/main/foo" to 2L)),
+				hasEntry(equalTo("bar"), equalTo("/main/bar" to 5L))
+			)
+		)
 	}
 
 	private fun createTwoSimpleRepositories() {
