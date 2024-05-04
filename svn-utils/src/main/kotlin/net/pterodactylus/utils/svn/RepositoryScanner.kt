@@ -14,12 +14,11 @@ class RepositoryScanner(svnUrl: SVNURL) {
 		val latestRevision = svnRepository.latestRevision
 
 		LongRange(1, latestRevision).forEach { revision ->
-			val branch = simpleSvn.getLogEntry("/", revision)!!
+			simpleSvn.getLogEntry("/", revision)!!
 				.changedPaths.keys
 				.mapNotNull { path -> findBranchByPathAndRevision(path, revision) }
 				.distinct()
-				.single()
-			branchRevisions.getOrPut(branch) { mutableListOf() }.add(revision)
+				.forEach { branch -> branchRevisions.getOrPut(branch) { mutableListOf() }.add(revision) }
 		}
 
 		return branchRevisions
