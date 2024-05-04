@@ -24,7 +24,7 @@ class RepositoryScanner(svnUrl: SVNURL) {
 				.forEach { branch -> branchRevisions.getOrPut(branch) { TreeSet() }.add(revision) }
 		}
 
-		return RepositoryInformation(branchRevisions)
+		return RepositoryInformation(latestRevision, branchRevisions)
 	}
 
 	private fun findBranchByPathAndRevision(path: String, revision: Long): String? =
@@ -41,7 +41,7 @@ class RepositoryScanner(svnUrl: SVNURL) {
 
 }
 
-data class RepositoryInformation(val brachRevisions: Map<String, SortedSet<Long>>)
+data class RepositoryInformation(val latestRevision: Long, val brachRevisions: Map<String, SortedSet<Long>>)
 
 private operator fun Pair<Long, Long>.contains(value: Long) =
 	if (second != -1L) {
