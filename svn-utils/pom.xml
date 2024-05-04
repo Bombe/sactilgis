@@ -9,10 +9,6 @@
 
 	<artifactId>svn-utils</artifactId>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.tmatesoft.svnkit</groupId>
