@@ -32,7 +32,12 @@ class SimpleSVN(svnUrl: SVNURL) {
 		}
 
 		fun addFile(path: String, content: InputStream) {
-			filesToAdd.add(path to content)
+			filesToAdd.add(path)
+			editFile(path, content)
+		}
+
+		fun editFile(path: String, content: InputStream) {
+			filesToEdit.add(path to content)
 		}
 
 		fun copyFile(path: String, source: String, revision: Long) {
@@ -47,8 +52,10 @@ class SimpleSVN(svnUrl: SVNURL) {
 			directoriesToAdd.forEach { path -> commitEditor.addDir(path, null, -1) }
 			directoriesToCopy.forEach { (path, source, revision) -> commitEditor.addDir(path, source, revision) }
 			filesToCopy.forEach { (path, source, revision) -> commitEditor.addFile(path, source, revision) }
-			filesToAdd.forEach { (path, content) ->
+			filesToAdd.forEach { path ->
 				commitEditor.addFile(path, null, -1)
+			}
+			filesToEdit.forEach { (path, content) ->
 				commitEditor.applyTextDelta(path, null)
 				SVNDeltaGenerator().sendDelta(path, content, commitEditor, true)
 			}
@@ -57,7 +64,8 @@ class SimpleSVN(svnUrl: SVNURL) {
 
 		private val directoriesToAdd = mutableListOf<String>()
 		private val directoriesToCopy = mutableListOf<Triple<String, String, Long>>()
-		private val filesToAdd = mutableListOf<Pair<String, InputStream>>()
+		private val filesToAdd = mutableListOf<String>()
+		private val filesToEdit = mutableListOf<Pair<String, InputStream>>()
 		private val filesToCopy = mutableListOf<Triple<String, String, Long>>()
 
 	}

@@ -99,6 +99,18 @@ class SimpleSVNTest {
 		}
 	}
 
+	@Test
+	fun `SimpleSVN can edit file in repository`() {
+		addREADME()
+		simpleSvn.createCommit("testuser", "edit README") { commit ->
+			commit.editFile("/README", "really, best project.\n".byteInputStream())
+		}
+		ByteArrayOutputStream().use { outputStream ->
+			svnRepository.getFile("/README", 2, null, outputStream)
+			assertThat(outputStream.toByteArray().decodeToString(), equalTo("really, best project.\n"))
+		}
+	}
+
 	private fun addTestDirectory() {
 		simpleSvn.createCommit("testuser", "add directory") { commit ->
 			commit.addDirectory("/test")
