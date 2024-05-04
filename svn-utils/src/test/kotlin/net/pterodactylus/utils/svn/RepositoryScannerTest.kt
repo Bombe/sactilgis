@@ -102,6 +102,21 @@ class RepositoryScannerTest {
 		)
 	}
 
+	@Test
+	fun `repository scanner omits commits that delete a branch`() {
+		createTwoSimpleRepositories()
+		simpleSvn.createCommit("testuser", "deleting project2") { commit ->
+			commit.deletePath("/project2")
+		}
+		repositoryScanner.addBranch("p2", BranchDefinition(2L to "/project2"))
+		val repositoryInformation = repositoryScanner.identifyBranches()
+		assertThat(
+			repositoryInformation.brachRevisions, allOf(
+				hasEntry(equalTo("p2"), contains(2, 4))
+			)
+		)
+	}
+
 	private fun createTwoSimpleRepositories() {
 		simpleSvn.createCommit("testuser", "create directory") { commit ->
 			commit.addDirectory("/project1")

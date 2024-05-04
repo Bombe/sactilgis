@@ -23,8 +23,8 @@ class RepositoryScanner(svnUrl: SVNURL) {
 				.mapNotNull { path -> findBranchByPathAndRevision(path, revision) }
 				.distinct()
 				.forEach { branch ->
+					val path = findPathForBranchAtRevision(branch, revision)
 					if (branch !in branchRevisions) {
-						val path = findPathForBranchAtRevision(branch, revision)
 						logEntry.changedPaths[path]?.let { branchPath ->
 							if (branchPath.copyRevision != -1L) {
 								val sourceBranch = findBranchByPathAndRevision(branchPath.copyPath, branchPath.copyRevision)!!
@@ -33,7 +33,9 @@ class RepositoryScanner(svnUrl: SVNURL) {
 							}
 						}
 					}
-					branchRevisions.getOrPut(branch) { TreeSet() }.add(revision)
+					if (logEntry.changedPaths[path]?.type != 'D') {
+						branchRevisions.getOrPut(branch) { TreeSet() }.add(revision)
+					}
 				}
 		}
 
