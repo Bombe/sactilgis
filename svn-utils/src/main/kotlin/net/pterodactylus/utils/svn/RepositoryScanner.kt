@@ -3,12 +3,13 @@ package net.pterodactylus.utils.svn
 import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
 import java.util.SortedSet
+import java.util.TreeMap
 import java.util.TreeSet
 
 class RepositoryScanner(svnUrl: SVNURL) {
 
-	fun addBranch(name: String, vararg pathRanges: Pair<String, Pair<Long, Long>>) {
-		branchDefinitions.merge(name, pathRanges.toList()) { l1, l2 -> l1 + l2 }
+	fun addBranch(name: String, vararg pathFirstRevisions: Pair<Long, String>) {
+		branchDefinitions.getOrPut(name) { TreeMap() }.putAll(pathFirstRevisions)
 	}
 
 	fun identifyBranches(): Map<String, SortedSet<Long>> {
@@ -28,15 +29,15 @@ class RepositoryScanner(svnUrl: SVNURL) {
 
 	private fun findBranchByPathAndRevision(path: String, revision: Long): String? =
 		branchDefinitions
-			.mapValues { (_, pathRanges) -> pathRanges.singleOrNull { (_, range) -> revision in range } }
+			.mapValues { (_, revisionPaths) -> revisionPaths.floorEntry(revision).value }
 			.filter { it.value != null }
-			.filterValues { pathRanges -> path.startsWith(pathRanges!!.first) }
+			.filterValues { p -> path.startsWith(p) }
 			.keys.singleOrNull()
 
 	private val simpleSvn = SimpleSVN(svnUrl)
 	private val svnRepository = SVNRepositoryFactory.create(svnUrl)
 
-	private val branchDefinitions = mutableMapOf<String, Collection<Pair<String, Pair<Long, Long>>>>()
+	private val branchDefinitions = mutableMapOf<String, TreeMap<Long, String>>()
 
 }
 

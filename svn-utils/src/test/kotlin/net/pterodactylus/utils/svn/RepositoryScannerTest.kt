@@ -18,8 +18,8 @@ class RepositoryScannerTest {
 	@Test
 	fun `repository scanner identifies branch correctly`() {
 		createTwoSimpleRepositories()
-		repositoryScanner.addBranch("p1", "/project1" to (0L to -1))
-		repositoryScanner.addBranch("p2", "/project2" to (0L to -1))
+		repositoryScanner.addBranch("p1", 0L to "/project1")
+		repositoryScanner.addBranch("p2", 0L to "/project2")
 		val branches = repositoryScanner.identifyBranches()
 		assertThat(
 			branches, allOf(
@@ -32,7 +32,7 @@ class RepositoryScannerTest {
 	@Test
 	fun `repository scanner can handle outside-of-any-project revisions`() {
 		createTwoSimpleRepositories()
-		repositoryScanner.addBranch("p1", "/project1" to (0L to -1))
+		repositoryScanner.addBranch("p1", 0L to "/project1")
 		val branches = repositoryScanner.identifyBranches()
 		assertThat(
 			branches, allOf(
@@ -53,7 +53,7 @@ class RepositoryScannerTest {
 			commit.copyDirectory("/trunk/project1", "/project1", 5)
 			commit.deletePath("/project1")
 		}
-		repositoryScanner.addBranch("p1", "/project1" to (0L to 5), "/trunk/project1" to (6L to -1))
+		repositoryScanner.addBranch("p1", 0L to "/project1", 6L to "/trunk/project1")
 		val branches = repositoryScanner.identifyBranches()
 		assertThat(
 			branches, allOf(
