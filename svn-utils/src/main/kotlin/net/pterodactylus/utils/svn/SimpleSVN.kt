@@ -13,11 +13,8 @@ import java.io.InputStream
  */
 class SimpleSVN(svnUrl: SVNURL) {
 
-	fun createCommit(username: String, logMessage: String, commitConsumer: (SimpleCommit) -> Unit): SVNCommitInfo {
-		val simpleCommit = SimpleCommit(username, logMessage)
-		commitConsumer(simpleCommit)
-		return simpleCommit.commit()
-	}
+	fun createCommit(username: String, logMessage: String, commitConsumer: (SimpleCommit) -> Unit) =
+		SimpleCommit(username, logMessage).also(commitConsumer).commit()
 
 	private val svnRepository: SVNRepository = SVNRepositoryFactory.create(svnUrl)
 
