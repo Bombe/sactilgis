@@ -54,14 +54,21 @@ fun main(vararg arguments: String) {
 			if (currentBranch != branch) {
 				if (gitRepository.branchDoesNotExist(branch)) {
 					print("(creating $branch)")
-					val originalRevision = repositoryInformation.branchCreationPoints[branch]!!.second
-					printTime("create") {
-						gitRepository.branchCreate().setName(branch).setStartPoint(revisionCommits[originalRevision]!!.name).call()
+					val originalRevision = repositoryInformation.branchCreationPoints[branch]?.second
+					if (originalRevision != null) {
+						printTime("create") {
+							gitRepository.checkout().setCreateBranch(true).setName(branch).setStartPoint(revisionCommits[originalRevision]!!.name).call()
+						}
+					} else {
+						printTime("orphan") {
+							gitRepository.checkout().setName(branch).setOrphan(true).call()
+						}
 					}
-				}
-				print("(switching to $branch)")
-				printTime("checkout") {
-					gitRepository.checkout().setName(branch).call()
+				} else {
+					print("(switching to $branch)")
+					printTime("checkout") {
+						gitRepository.checkout().setName(branch).call()
+					}
 				}
 				currentBranch = branch
 			}
