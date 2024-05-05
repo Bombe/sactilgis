@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.util.StdConverter
 
 class Configuration {
 
-	class Subversion {
+	class General {
 
-		var url: String = ""
+		@JsonProperty("subversion-url")
+		var subversionUrl: String = ""
+		var committer: Committer = Committer()
 
 	}
 
@@ -73,7 +75,7 @@ class Configuration {
 
 	}
 
-	val subversion: Subversion = Subversion()
+	val general: General = General()
 	val branches: List<Branch> = ArrayList()
 	val committers: List<Committer> = ArrayList()
 

@@ -25,7 +25,7 @@ fun main(vararg arguments: String) {
 
 	val configuration = xmlMapper.readValue(File(arguments.first()), Configuration::class.java)
 
-	val svnUrl = SVNURL.parseURIDecoded(configuration.subversion.url)
+	val svnUrl = SVNURL.parseURIDecoded(configuration.general.subversionUrl)
 	val branchDefinitions = configuration.branches.associate { branch -> branch.name to BranchDefinition(*branch.revisionPaths.map { it.revision to it.path }.toTypedArray()) }
 	val repositoryScanner = RepositoryScanner(svnUrl)
 	branchDefinitions.forEach(repositoryScanner::addBranch)
@@ -34,6 +34,7 @@ fun main(vararg arguments: String) {
 	val committers = configuration.committers
 		.associate { it.subversionId to PersonIdent(it.name, it.email) }
 		.withDefault { PersonIdent("Unknown", "unknown@svn") }
+	val committer = configuration.general.committer.let { PersonIdent(it.name, it.email) }
 
 	fun findActualRevision(branch: String, revision: Long) =
 		repositoryInformation.brachRevisions[branch]!!.headSet(revision + 1).last()
@@ -76,6 +77,7 @@ fun main(vararg arguments: String) {
 			val commitMessage = fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message
 			val commit = gitRepository.commit()
 				.setAuthor(PersonIdent(committers[logEntry.author], logEntry.date))
+				.setCommitter(committer)
 				.setMessage(commitMessage)
 				.setSign(false)
 				.call()
@@ -84,7 +86,7 @@ fun main(vararg arguments: String) {
 			tagRevisionsByBranch[branch]!![revision]?.let { tag ->
 				println("Tagging $branch@$revision as ${tag.name}...")
 				val message = simpleSvn.getLogEntry("/", tag.messageRevision)!!.message
-				gitRepository.tag().setObjectId(revisionCommits[revision]).setMessage(message).setName(tag.name).setAnnotated(true).setSigned(false).call()
+				gitRepository.tag().setObjectId(revisionCommits[revision]).setTagger(committer).setMessage(message).setName(tag.name).setAnnotated(true).setSigned(false).call()
 			}
 		}
 	}
