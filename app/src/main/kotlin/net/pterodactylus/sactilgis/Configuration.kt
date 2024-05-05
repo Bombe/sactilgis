@@ -50,6 +50,7 @@ class Configuration {
 
 			var revision: Long = 0
 			var name: String = ""
+			var messageRevision: Long = 0
 
 		}
 

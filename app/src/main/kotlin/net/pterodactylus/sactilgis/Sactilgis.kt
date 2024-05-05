@@ -81,7 +81,8 @@ fun main(vararg arguments: String) {
 			println("\b\b\b -> $commit")
 			tagRevisionsByBranch[branch]!![revision]?.let { tag ->
 				println("Tagging $branch@$revision as ${tag.name}...")
-				gitRepository.tag().setObjectId(revisionCommits[revision]).setName(tag.name).setAnnotated(true).setSigned(false).call()
+				val message = simpleSvn.getLogEntry("/", tag.messageRevision)!!.message
+				gitRepository.tag().setObjectId(revisionCommits[revision]).setMessage(message).setName(tag.name).setAnnotated(true).setSigned(false).call()
 			}
 		}
 	}
