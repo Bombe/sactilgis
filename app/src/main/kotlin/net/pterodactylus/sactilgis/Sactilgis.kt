@@ -83,19 +83,24 @@ fun main(vararg arguments: String) {
 					svnClientManager.updateClient.doUpdate(workDirectory, svnRevision, SVNDepth.INFINITY, false, true)
 				}
 			}
-			printTime("add") {
-				val filePatterns = workDirectory.listFiles { _, name -> (name != ".svn") && (name != ".git") }?.map(File::getName) ?: emptyList()
-				gitRepository.add().apply { filePatterns.forEach(this::addFilepattern) }.setUpdate(true).call()
-				gitRepository.add().apply { filePatterns.forEach(this::addFilepattern) }.setUpdate(false).call()
+			val filePatterns = printTime("status") {
+				gitRepository.status().call().let { status ->
+					status.added + status.changed + status.modified + status.missing + status.removed + status.untracked + status.untrackedFolders + status.ignoredNotInIndex
+				}.filterNot { it.startsWith(".svn") }
 			}
-			printTime("reset") {
-				gitRepository.reset().addPath(".svn").call()
+			print("(${filePatterns.size} files)")
+			filePatterns.takeIf { it.isNotEmpty() }?.let {
+				printTime("add") {
+					gitRepository.add().apply { it.forEach(this::addFilepattern) }.setUpdate(true).call()
+					gitRepository.add().apply { it.forEach(this::addFilepattern) }.setUpdate(false).call()
+				}
 			}
 			printTime("commit") {
 				val logEntry = simpleSvn.getLogEntry(path, revision)!!
 				val commitMessage = (fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message) +
 						"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
 				val commit = gitRepository.commit()
+					.setAllowEmpty(true)
 					.setAuthor(PersonIdent(committers.getValue(logEntry.author), logEntry.date))
 					.setCommitter(committer.let { if (configuration.general.useCommitDateFromEntry) PersonIdent(it, logEntry.date) else it })
 					.setMessage(commitMessage)
