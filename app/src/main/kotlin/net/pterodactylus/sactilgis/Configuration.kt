@@ -19,6 +19,7 @@ class Configuration {
 		@JsonProperty("revision-paths")
 		val revisionPaths: List<RevisionPath> = ArrayList()
 		val merges: List<Merge> = ArrayList()
+		val tags: List<Tag> = ArrayList()
 
 		class RevisionConverter : StdConverter<String?, Long?>() {
 
@@ -42,6 +43,13 @@ class Configuration {
 
 			var revision: Long = 0
 			var branch: String = ""
+
+		}
+
+		class Tag {
+
+			var revision: Long = 0
+			var name: String = ""
 
 		}
 

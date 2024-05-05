@@ -6,9 +6,9 @@ import net.pterodactylus.utils.svn.RepositoryScanner
 import net.pterodactylus.utils.svn.SimpleSVN
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.MergeCommand.FastForwardMode
-import org.eclipse.jgit.lib.AnyObjectId
 import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.Ref
+import org.eclipse.jgit.revwalk.RevCommit
 import org.tmatesoft.svn.core.SVNDepth
 import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.wc.SVNClientManager
@@ -35,14 +35,18 @@ fun main(vararg arguments: String) {
 		.associate { it.subversionId to PersonIdent(it.name, it.email) }
 		.withDefault { PersonIdent("Unknown", "unknown@svn") }
 
+	fun findActualRevision(branch: String, revision: Long) =
+		repositoryInformation.brachRevisions[branch]!!.headSet(revision + 1).last()
+
 	val mergeRevisionsByBranch = configuration.branches.associate { it.name to it.merges.associateBy { it.revision } }
+	val tagRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.tags.associateBy { findActualRevision(branch.name, it.revision) } }
 
 	val workDirectory = File("git-repo")
 	workDirectory.mkdirs()
 	Git.init().setBare(false).setDirectory(workDirectory).setInitialBranch("main").call().use { gitRepository ->
 		val simpleSvn = SimpleSVN(svnUrl)
 		val svnClientManager = SVNClientManager.newInstance()
-		val revisionCommits = mutableMapOf<Long, AnyObjectId>()
+		val revisionCommits = mutableMapOf<Long, RevCommit>()
 		var currentBranch = "main"
 
 		repositoryInformation.brachRevisions.flatMap { (key, value) -> value.map { it to key } }.sortedBy { it.first }.forEach { (revision, branch) ->
@@ -75,6 +79,10 @@ fun main(vararg arguments: String) {
 				.call()
 			revisionCommits[revision] = commit
 			println("\b\b\b -> $commit")
+			tagRevisionsByBranch[branch]!![revision]?.let { tag ->
+				println("Tagging $branch@$revision as ${tag.name}...")
+				gitRepository.tag().setObjectId(revisionCommits[revision]).setName(tag.name).setAnnotated(true).setSigned(false).call()
+			}
 		}
 	}
 }
