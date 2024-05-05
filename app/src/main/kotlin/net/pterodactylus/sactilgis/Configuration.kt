@@ -11,6 +11,8 @@ class Configuration {
 		@JsonProperty("subversion-url")
 		var subversionUrl: String = ""
 		var committer: Committer = Committer()
+		@JsonProperty("target-directory")
+		var targetDirectory: String = "git-repo"
 
 	}
 
