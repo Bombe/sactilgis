@@ -49,7 +49,7 @@ fun main(vararg arguments: String) {
 		svnClientManager.updateClient.doCheckout(svnUrl, workDirectory, SVNRevision.create(1), SVNRevision.create(1), SVNDepth.EMPTY, false)
 
 		repositoryInformation.brachRevisions.flatMap { (key, value) -> value.map { it to key } }.sortedBy { it.first }.forEach { (revision, branch) ->
-			print("${"%tT.%<tL".format(System.currentTimeMillis())} (@$revision)")
+			print("${"%tT.%<tL".format(System.currentTimeMillis())} (@$revision)($branch)")
 			val svnRevision = SVNRevision.create(revision)
 			if (currentBranch != branch) {
 				if (gitRepository.branchDoesNotExist(branch)) {
