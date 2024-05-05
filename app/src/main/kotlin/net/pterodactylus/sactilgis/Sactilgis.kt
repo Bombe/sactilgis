@@ -80,7 +80,7 @@ fun main(vararg arguments: String) {
 				.setSign(false)
 				.call()
 			revisionCommits[revision] = commit
-			println("\b\b\b -> $commit")
+			println("\b\b\b -> ${commit.id.name}")
 			tagRevisionsByBranch[branch]!![revision]?.let { tag ->
 				println("Tagging $branch@$revision as ${tag.name}...")
 				val message = simpleSvn.getLogEntry("/", tag.messageRevision)!!.message
