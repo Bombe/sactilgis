@@ -53,24 +53,25 @@ fun main(vararg arguments: String) {
 		var currentBranch = "main"
 
 		repositoryInformation.brachRevisions.flatMap { (key, value) -> value.map { it to key } }.sortedBy { it.first }.forEach { (revision, branch) ->
+			print("${"%tT.%<tL".format(System.currentTimeMillis())} @$revision...")
 			val svnRevision = SVNRevision.create(revision)
 			if (currentBranch != branch) {
 				if (gitRepository.branchDoesNotExist(branch)) {
-					println("Creating new branch: $branch")
+					print("\b\b\b, creating $branch...")
 					val originalRevision = repositoryInformation.branchCreationPoints[branch]!!.second
 					gitRepository.branchCreate().setName(branch).setStartPoint(revisionCommits[originalRevision]!!.name).call()
 				}
-				println("Switching to branch: $branch")
+				print("\b\b\b, switching to $branch...")
 				gitRepository.checkout().setName(branch).call()
 				currentBranch = branch
 			}
 			mergeRevisionsByBranch[branch]!![revision]?.let { merge ->
-				println("Merging ${merge.branch}...")
+				print("\b\b\b, merging ${merge.branch}...")
 				gitRepository.merge().setFastForward(FastForwardMode.NO_FF).include(gitRepository.repository.findRef(merge.branch)).setCommit(false).call()
 			}
 			clearWorkDirectory(workDirectory.toPath())
 			val path = branchDefinitions[branch]!!.pathAt(revision)!!
-			print("@${revision}: $path...")
+			print("\b\b\b, $path...")
 			svnClientManager.updateClient.doExport(svnUrl.appendPath(path, false), workDirectory, svnRevision, svnRevision, "LF", true, SVNDepth.INFINITY)
 			gitRepository.add().addFilepattern(".").setUpdate(false).call()
 			gitRepository.add().addFilepattern(".").setUpdate(true).call()
@@ -84,9 +85,9 @@ fun main(vararg arguments: String) {
 				.setSign(false)
 				.call()
 			revisionCommits[revision] = commit
-			println("\b\b\b -> ${commit.id.name}")
+			print("\b\b\b -> ${commit.id.name}")
 			tagRevisionsByBranch[branch]!![revision]?.let { tag ->
-				println("Tagging $branch@$revision as ${tag.name}...")
+				print("tagging as ${tag.name}...")
 				val tagLogEntry = simpleSvn.getLogEntry("/", tag.messageRevision)!!
 				gitRepository.tag()
 					.setObjectId(revisionCommits[revision])
@@ -95,6 +96,7 @@ fun main(vararg arguments: String) {
 					.setTagger(PersonIdent(committer, tagLogEntry.date))
 					.setAnnotated(true).setSigned(false).call()
 			}
+			println("\b\b\b.")
 		}
 	}
 }
