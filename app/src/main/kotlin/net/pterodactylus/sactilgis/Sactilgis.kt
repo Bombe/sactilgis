@@ -5,6 +5,7 @@ import net.pterodactylus.utils.svn.BranchDefinition
 import net.pterodactylus.utils.svn.RepositoryScanner
 import net.pterodactylus.utils.svn.SimpleSVN
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.MergeCommand.FastForwardMode
 import org.eclipse.jgit.lib.AnyObjectId
 import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.Ref
@@ -53,6 +54,10 @@ fun main(vararg arguments: String) {
 				println("Switching to branch: $branch")
 				gitRepository.checkout().setName(branch).call()
 				currentBranch = branch
+			}
+			configuration.branches.single { it.name == branch }.merges.singleOrNull { it.revision == revision }?.let { merge ->
+				println("Merging ${merge.branch}...")
+				gitRepository.merge().setFastForward(FastForwardMode.NO_FF).include(gitRepository.repository.findRef(merge.branch)).setCommit(false).call()
 			}
 			clearWorkDirectory(workDirectory.toPath())
 			val path = branchDefinitions[branch]!!.pathAt(revision)!!
