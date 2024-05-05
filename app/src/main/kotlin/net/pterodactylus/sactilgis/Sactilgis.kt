@@ -14,12 +14,6 @@ import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.wc.SVNClientManager
 import org.tmatesoft.svn.core.wc.SVNRevision
 import java.io.File
-import java.io.IOException
-import java.nio.file.FileVisitResult
-import java.nio.file.FileVisitor
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.attribute.BasicFileAttributes
 
 fun main(vararg arguments: String) {
 
@@ -51,6 +45,8 @@ fun main(vararg arguments: String) {
 		val svnClientManager = SVNClientManager.newInstance()
 		val revisionCommits = mutableMapOf<Long, RevCommit>()
 		var currentBranch = "main"
+		var currentPath = "/"
+		svnClientManager.updateClient.doCheckout(svnUrl, workDirectory, SVNRevision.create(1), SVNRevision.create(1), SVNDepth.EMPTY, false)
 
 		repositoryInformation.brachRevisions.flatMap { (key, value) -> value.map { it to key } }.sortedBy { it.first }.forEach { (revision, branch) ->
 			print("${"%tT.%<tL".format(System.currentTimeMillis())} @$revision...")
@@ -69,12 +65,17 @@ fun main(vararg arguments: String) {
 				print("\b\b\b, merging ${merge.branch}...")
 				gitRepository.merge().setFastForward(FastForwardMode.NO_FF).include(gitRepository.repository.findRef(merge.branch)).setCommit(false).call()
 			}
-			clearWorkDirectory(workDirectory.toPath())
 			val path = branchDefinitions[branch]!!.pathAt(revision)!!
 			print("\b\b\b, $path...")
-			svnClientManager.updateClient.doExport(svnUrl.appendPath(path, false), workDirectory, svnRevision, svnRevision, "LF", true, SVNDepth.INFINITY)
-			gitRepository.add().addFilepattern(".").setUpdate(false).call()
-			gitRepository.add().addFilepattern(".").setUpdate(true).call()
+			if (path != currentPath) {
+				currentPath = path
+				svnClientManager.updateClient.doSwitch(workDirectory, svnUrl.appendPath(path, false), svnRevision, svnRevision, SVNDepth.INFINITY, false, true)
+			} else {
+				svnClientManager.updateClient.doUpdate(workDirectory, svnRevision, SVNDepth.INFINITY, false, true)
+			}
+			val filePatterns = workDirectory.listFiles { _, name -> (name != ".svn") && (name != ".git") }?.map(File::getName) ?: emptyList()
+			gitRepository.add().apply { filePatterns.forEach(this::addFilepattern) }.setUpdate(true).call()
+			gitRepository.add().apply { filePatterns.forEach(this::addFilepattern) }.setUpdate(false).call()
 			val logEntry = simpleSvn.getLogEntry(path, revision)!!
 			val commitMessage = (fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message) +
 					"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
@@ -105,28 +106,3 @@ private fun Git.branchDoesNotExist(branch: String) =
 	"refs/heads/$branch" !in branchList().call().map(Ref::getName)
 
 private val xmlMapper = XmlMapper()
-
-private fun clearWorkDirectory(path: Path) {
-	Files.walkFileTree(path, object : FileVisitor<Path> {
-		override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-			if (dir == path.resolve(".git")) {
-				return FileVisitResult.SKIP_SUBTREE
-			}
-			return FileVisitResult.CONTINUE
-		}
-
-		override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-			file.toFile().delete()
-			return FileVisitResult.CONTINUE
-		}
-
-		override fun visitFileFailed(file: Path, exc: IOException?): FileVisitResult {
-			return FileVisitResult.TERMINATE
-		}
-
-		override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
-			dir.toFile().delete()
-			return FileVisitResult.CONTINUE
-		}
-	})
-}
