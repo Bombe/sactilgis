@@ -49,57 +49,83 @@ fun main(vararg arguments: String) {
 		svnClientManager.updateClient.doCheckout(svnUrl, workDirectory, SVNRevision.create(1), SVNRevision.create(1), SVNDepth.EMPTY, false)
 
 		repositoryInformation.brachRevisions.flatMap { (key, value) -> value.map { it to key } }.sortedBy { it.first }.forEach { (revision, branch) ->
-			print("${"%tT.%<tL".format(System.currentTimeMillis())} @$revision...")
+			print("${"%tT.%<tL".format(System.currentTimeMillis())} (@$revision)")
 			val svnRevision = SVNRevision.create(revision)
 			if (currentBranch != branch) {
 				if (gitRepository.branchDoesNotExist(branch)) {
-					print("\b\b\b, creating $branch...")
+					print("(creating $branch)")
 					val originalRevision = repositoryInformation.branchCreationPoints[branch]!!.second
-					gitRepository.branchCreate().setName(branch).setStartPoint(revisionCommits[originalRevision]!!.name).call()
+					printTime("create") {
+						gitRepository.branchCreate().setName(branch).setStartPoint(revisionCommits[originalRevision]!!.name).call()
+					}
 				}
-				print("\b\b\b, switching to $branch...")
-				gitRepository.checkout().setName(branch).call()
+				print("(switching to $branch)")
+				printTime("checkout") {
+					gitRepository.checkout().setName(branch).call()
+				}
 				currentBranch = branch
 			}
 			mergeRevisionsByBranch[branch]!![revision]?.let { merge ->
-				print("\b\b\b, merging ${merge.branch}...")
-				gitRepository.merge().setFastForward(FastForwardMode.NO_FF).include(gitRepository.repository.findRef(merge.branch)).setCommit(false).call()
+				print("(merging ${merge.branch})")
+				printTime("merge") {
+					gitRepository.merge().setFastForward(FastForwardMode.NO_FF).include(gitRepository.repository.findRef(merge.branch)).setCommit(false).call()
+				}
 			}
 			val path = branchDefinitions[branch]!!.pathAt(revision)!!
-			print("\b\b\b, $path...")
+			print("($path)")
 			if (path != currentPath) {
 				currentPath = path
-				svnClientManager.updateClient.doSwitch(workDirectory, svnUrl.appendPath(path, false), svnRevision, svnRevision, SVNDepth.INFINITY, false, true)
+				printTime("switch") {
+					svnClientManager.updateClient.doSwitch(workDirectory, svnUrl.appendPath(path, false), svnRevision, svnRevision, SVNDepth.INFINITY, false, true)
+				}
 			} else {
-				svnClientManager.updateClient.doUpdate(workDirectory, svnRevision, SVNDepth.INFINITY, false, true)
+				printTime("update") {
+					svnClientManager.updateClient.doUpdate(workDirectory, svnRevision, SVNDepth.INFINITY, false, true)
+				}
 			}
-			val filePatterns = workDirectory.listFiles { _, name -> (name != ".svn") && (name != ".git") }?.map(File::getName) ?: emptyList()
-			gitRepository.add().apply { filePatterns.forEach(this::addFilepattern) }.setUpdate(true).call()
-			gitRepository.add().apply { filePatterns.forEach(this::addFilepattern) }.setUpdate(false).call()
-			val logEntry = simpleSvn.getLogEntry(path, revision)!!
-			val commitMessage = (fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message) +
-					"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
-			val commit = gitRepository.commit()
-				.setAuthor(PersonIdent(committers.getValue(logEntry.author), logEntry.date))
-				.setCommitter(committer.let { if (configuration.general.useCommitDateFromEntry) PersonIdent(it, logEntry.date) else it })
-				.setMessage(commitMessage)
-				.setSign(false)
-				.call()
-			revisionCommits[revision] = commit
-			print("\b\b\b -> ${commit.id.name}")
+			printTime("add") {
+				val filePatterns = workDirectory.listFiles { _, name -> (name != ".svn") && (name != ".git") }?.map(File::getName) ?: emptyList()
+				gitRepository.add().apply { filePatterns.forEach(this::addFilepattern) }.setUpdate(true).call()
+				gitRepository.add().apply { filePatterns.forEach(this::addFilepattern) }.setUpdate(false).call()
+			}
+			printTime("reset") {
+				gitRepository.reset().addPath(".svn").call()
+			}
+			printTime("commit") {
+				val logEntry = simpleSvn.getLogEntry(path, revision)!!
+				val commitMessage = (fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message) +
+						"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
+				val commit = gitRepository.commit()
+					.setAuthor(PersonIdent(committers.getValue(logEntry.author), logEntry.date))
+					.setCommitter(committer.let { if (configuration.general.useCommitDateFromEntry) PersonIdent(it, logEntry.date) else it })
+					.setMessage(commitMessage)
+					.setSign(false)
+					.call()
+				revisionCommits[revision] = commit
+				print("(${commit.id.name})")
+			}
 			tagRevisionsByBranch[branch]!![revision]?.let { tag ->
-				print("tagging as ${tag.name}...")
+				print("(tagging ${tag.name})")
 				val tagLogEntry = simpleSvn.getLogEntry("/", tag.messageRevision)!!
-				gitRepository.tag()
-					.setObjectId(revisionCommits[revision])
-					.setName(tag.name)
-					.setMessage(tagLogEntry.message)
-					.setTagger(PersonIdent(committer, tagLogEntry.date))
-					.setAnnotated(true).setSigned(false).call()
+				printTime("tag") {
+					gitRepository.tag()
+						.setObjectId(revisionCommits[revision])
+						.setName(tag.name)
+						.setMessage(tagLogEntry.message)
+						.setTagger(PersonIdent(committer, tagLogEntry.date))
+						.setAnnotated(true).setSigned(false).call()
+				}
 			}
-			println("\b\b\b.")
+			println()
 		}
 	}
+}
+
+private fun printTime(text: String, action: () -> Unit) {
+	val timeBefore = System.currentTimeMillis()
+	action()
+	val timeAfter = System.currentTimeMillis()
+	print("($text: ${(timeAfter - timeBefore) / 1000.0}s)")
 }
 
 private fun Git.branchDoesNotExist(branch: String) =
