@@ -123,9 +123,12 @@ fun main(vararg arguments: String) {
 
 private fun printTime(text: String, action: () -> Unit) {
 	val timeBefore = System.currentTimeMillis()
-	action()
-	val timeAfter = System.currentTimeMillis()
-	print("($text: ${(timeAfter - timeBefore) / 1000.0}s)")
+	try {
+		action()
+	} finally {
+		val timeAfter = System.currentTimeMillis()
+		print("($text: ${(timeAfter - timeBefore) / 1000.0}s)")
+	}
 }
 
 private fun Git.branchDoesNotExist(branch: String) =
