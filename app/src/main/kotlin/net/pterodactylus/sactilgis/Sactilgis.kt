@@ -35,6 +35,8 @@ fun main(vararg arguments: String) {
 		.associate { it.subversionId to PersonIdent(it.name, it.email) }
 		.withDefault { PersonIdent("Unknown", "unknown@svn") }
 
+	val mergeRevisionsByBranch = configuration.branches.associate { it.name to it.merges.associateBy { it.revision } }
+
 	val workDirectory = File("git-repo")
 	workDirectory.mkdirs()
 	Git.init().setBare(false).setDirectory(workDirectory).setInitialBranch("main").call().use { gitRepository ->
@@ -55,7 +57,7 @@ fun main(vararg arguments: String) {
 				gitRepository.checkout().setName(branch).call()
 				currentBranch = branch
 			}
-			configuration.branches.single { it.name == branch }.merges.singleOrNull { it.revision == revision }?.let { merge ->
+			mergeRevisionsByBranch[branch]!![revision]?.let { merge ->
 				println("Merging ${merge.branch}...")
 				gitRepository.merge().setFastForward(FastForwardMode.NO_FF).include(gitRepository.repository.findRef(merge.branch)).setCommit(false).call()
 			}
