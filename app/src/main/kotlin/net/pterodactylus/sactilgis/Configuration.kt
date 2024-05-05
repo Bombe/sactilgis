@@ -20,6 +20,7 @@ class Configuration {
 		val revisionPaths: List<RevisionPath> = ArrayList()
 		val merges: List<Merge> = ArrayList()
 		val tags: List<Tag> = ArrayList()
+		val fixes: List<Fix> = ArrayList()
 
 		class RevisionConverter : StdConverter<String?, Long?>() {
 
@@ -51,6 +52,13 @@ class Configuration {
 			var revision: Long = 0
 			var name: String = ""
 			var messageRevision: Long = 0
+
+		}
+
+		class Fix {
+
+			var revision: Long = 0
+			var message: String = ""
 
 		}
 

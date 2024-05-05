@@ -40,6 +40,7 @@ fun main(vararg arguments: String) {
 
 	val mergeRevisionsByBranch = configuration.branches.associate { it.name to it.merges.associateBy { it.revision } }
 	val tagRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.tags.associateBy { findActualRevision(branch.name, it.revision) } }
+	val fixRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.fixes.associateBy { it.revision } }
 
 	val workDirectory = File("git-repo")
 	workDirectory.mkdirs()
@@ -72,9 +73,10 @@ fun main(vararg arguments: String) {
 			gitRepository.add().addFilepattern(".").setUpdate(false).call()
 			gitRepository.add().addFilepattern(".").setUpdate(true).call()
 			val logEntry = simpleSvn.getLogEntry(path, revision)!!
+			val commitMessage = fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message
 			val commit = gitRepository.commit()
 				.setAuthor(PersonIdent(committers[logEntry.author], logEntry.date))
-				.setMessage(logEntry.message)
+				.setMessage(commitMessage)
 				.setSign(false)
 				.call()
 			revisionCommits[revision] = commit
