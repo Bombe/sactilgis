@@ -39,7 +39,17 @@ class Configuration {
 
 	}
 
+	class Committer {
+
+		@get:JsonProperty("id")
+		var subversionId: String = ""
+		var name: String = ""
+		var email: String = ""
+
+	}
+
 	val subversion: Subversion = Subversion()
 	val branches: List<Branch> = ArrayList()
+	val committers: List<Committer> = ArrayList()
 
 }

@@ -30,6 +30,10 @@ fun main(vararg arguments: String) {
 	branchDefinitions.forEach(repositoryScanner::addBranch)
 	val repositoryInformation = repositoryScanner.identifyBranches()
 
+	val committers = configuration.committers
+		.associate { it.subversionId to PersonIdent(it.name, it.email) }
+		.withDefault { PersonIdent("Unknown", "unknown@svn") }
+
 	val workDirectory = File("git-repo")
 	workDirectory.mkdirs()
 	Git.init().setBare(false).setDirectory(workDirectory).setInitialBranch("main").call().use { gitRepository ->
@@ -58,7 +62,7 @@ fun main(vararg arguments: String) {
 			gitRepository.add().addFilepattern(".").setUpdate(true).call()
 			val logEntry = simpleSvn.getLogEntry(path, revision)!!
 			val commit = gitRepository.commit()
-				.setAuthor(PersonIdent(PersonIdent("", ""), logEntry.date))
+				.setAuthor(PersonIdent(committers[logEntry.author], logEntry.date))
 				.setMessage(logEntry.message)
 				.setSign(false)
 				.call()
