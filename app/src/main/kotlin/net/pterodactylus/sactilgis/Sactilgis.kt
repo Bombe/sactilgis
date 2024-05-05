@@ -45,7 +45,7 @@ fun main(vararg arguments: String) {
 		repositoryInformation.brachRevisions.flatMap { (key, value) -> value.map { it to key } }.sortedBy { it.first }.forEach { (revision, branch) ->
 			val svnRevision = SVNRevision.create(revision)
 			if (currentBranch != branch) {
-				if ("refs/heads/$branch" !in gitRepository.branchList().call().map(Ref::getName)) {
+				if (gitRepository.branchDoesNotExist(branch)) {
 					println("Creating new branch: $branch")
 					val originalRevision = repositoryInformation.branchCreationPoints[branch]!!.second
 					gitRepository.branchCreate().setName(branch).setStartPoint(revisionCommits[originalRevision]!!.name).call()
@@ -71,6 +71,9 @@ fun main(vararg arguments: String) {
 		}
 	}
 }
+
+private fun Git.branchDoesNotExist(branch: String) =
+	"refs/heads/$branch" !in branchList().call().map(Ref::getName)
 
 private val xmlMapper = XmlMapper()
 
