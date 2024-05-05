@@ -79,7 +79,7 @@ fun main(vararg arguments: String) {
 					"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
 			val commit = gitRepository.commit()
 				.setAuthor(PersonIdent(committers.getValue(logEntry.author), logEntry.date))
-				.setCommitter(committer)
+				.setCommitter(committer.let { if (configuration.general.useCommitDateFromEntry) PersonIdent(it, logEntry.date) else it })
 				.setMessage(commitMessage)
 				.setSign(false)
 				.call()

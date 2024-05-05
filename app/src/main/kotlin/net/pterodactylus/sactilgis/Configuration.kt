@@ -13,6 +13,8 @@ class Configuration {
 		var committer: Committer = Committer()
 		@JsonProperty("target-directory")
 		var targetDirectory: String = "git-repo"
+		@JsonProperty("use-commit-date-from-entry")
+		var useCommitDateFromEntry: Boolean = false
 
 	}
 
