@@ -121,10 +121,10 @@ fun main(vararg arguments: String) {
 	}
 }
 
-private fun printTime(text: String, action: () -> Unit) {
+private fun <T : Any> printTime(text: String, action: () -> T): T {
 	val timeBefore = System.currentTimeMillis()
 	try {
-		action()
+		return action()
 	} finally {
 		val timeAfter = System.currentTimeMillis()
 		print("($text: ${(timeAfter - timeBefore) / 1000.0}s)")
