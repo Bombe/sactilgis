@@ -74,7 +74,8 @@ fun main(vararg arguments: String) {
 			gitRepository.add().addFilepattern(".").setUpdate(false).call()
 			gitRepository.add().addFilepattern(".").setUpdate(true).call()
 			val logEntry = simpleSvn.getLogEntry(path, revision)!!
-			val commitMessage = fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message
+			val commitMessage = (fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message) +
+					"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
 			val commit = gitRepository.commit()
 				.setAuthor(PersonIdent(committers[logEntry.author], logEntry.date))
 				.setCommitter(committer)
