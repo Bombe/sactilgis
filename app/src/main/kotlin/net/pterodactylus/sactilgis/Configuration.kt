@@ -10,7 +10,7 @@ class Configuration {
 
 		@JsonProperty("subversion-url")
 		var subversionUrl: String = ""
-		var committer: Committer = Committer()
+		var committer: Committer? = null
 		@JsonProperty("target-directory")
 		var targetDirectory: String = "git-repo"
 		@JsonProperty("use-commit-date-from-entry")

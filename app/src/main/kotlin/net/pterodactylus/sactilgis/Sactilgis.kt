@@ -28,7 +28,7 @@ fun main(vararg arguments: String) {
 	val committers = configuration.committers
 		.associate { it.subversionId to PersonIdent(it.name, it.email) }
 		.withDefault { PersonIdent("Unknown", "unknown@svn") }
-	val committer = configuration.general.committer.let { PersonIdent(it.name, it.email) }
+	val committer = configuration.general.committer?.let { PersonIdent(it.name, it.email) }
 
 	fun findActualRevision(branch: String, revision: Long) =
 		repositoryInformation.brachRevisions[branch]!!.headSet(revision + 1).last()
@@ -109,10 +109,11 @@ fun main(vararg arguments: String) {
 				val logEntry = simpleSvn.getLogEntry(path, revision)!!
 				val commitMessage = (fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message) +
 						"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
+				val commitAuthor = committers.getValue(logEntry.author)
 				val commit = gitRepository.commit()
 					.setAllowEmpty(true)
-					.setAuthor(PersonIdent(committers.getValue(logEntry.author), logEntry.date))
-					.setCommitter(committer.let { if (configuration.general.useCommitDateFromEntry) PersonIdent(it, logEntry.date) else it })
+					.setAuthor(PersonIdent(commitAuthor, logEntry.date))
+					.setCommitter((committer ?: commitAuthor).let { if (configuration.general.useCommitDateFromEntry) PersonIdent(it, logEntry.date) else it })
 					.setMessage(commitMessage)
 					.setSign(configuration.general.signCommits)
 					.call()
@@ -127,7 +128,7 @@ fun main(vararg arguments: String) {
 						.setObjectId(revisionCommits[revision])
 						.setName(tag.name)
 						.setMessage(tagLogEntry.message)
-						.setTagger(PersonIdent(committer, tagLogEntry.date))
+						.setTagger(PersonIdent(committer ?: committers.getValue(tagLogEntry.author), tagLogEntry.date))
 						.setAnnotated(true).setSigned(configuration.general.signCommits).call()
 				}
 			}
