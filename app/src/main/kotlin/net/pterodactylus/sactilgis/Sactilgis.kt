@@ -114,7 +114,7 @@ fun main(vararg arguments: String) {
 					.setAuthor(PersonIdent(committers.getValue(logEntry.author), logEntry.date))
 					.setCommitter(committer.let { if (configuration.general.useCommitDateFromEntry) PersonIdent(it, logEntry.date) else it })
 					.setMessage(commitMessage)
-					.setSign(false)
+					.setSign(configuration.general.signCommits)
 					.call()
 				revisionCommits[revision] = commit
 				print("(${commit.id.name})")
@@ -128,7 +128,7 @@ fun main(vararg arguments: String) {
 						.setName(tag.name)
 						.setMessage(tagLogEntry.message)
 						.setTagger(PersonIdent(committer, tagLogEntry.date))
-						.setAnnotated(true).setSigned(false).call()
+						.setAnnotated(true).setSigned(configuration.general.signCommits).call()
 				}
 			}
 			println()

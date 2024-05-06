@@ -17,6 +17,8 @@ class Configuration {
 		var useCommitDateFromEntry: Boolean = false
 		@JsonProperty("ignore-global-gitignore-file")
 		var ignoreGlobalGitIgnoreFile: Boolean = true
+		@JsonProperty("sign-commits")
+		var signCommits: Boolean = false
 
 	}
 
