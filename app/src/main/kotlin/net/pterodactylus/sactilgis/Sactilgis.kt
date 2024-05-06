@@ -41,6 +41,7 @@ fun main(vararg arguments: String) {
 	workDirectory.deleteRecursively()
 	workDirectory.mkdirs()
 	Git.init().setBare(false).setDirectory(workDirectory).setInitialBranch("main").call().use { gitRepository ->
+		gitRepository.repository.config.setString("core", null, "excludesFile", "<none>")
 		val simpleSvn = SimpleSVN(svnUrl)
 		val svnClientManager = SVNClientManager.newInstance()
 		val revisionCommits = mutableMapOf<Long, RevCommit>()
