@@ -57,6 +57,7 @@ class Configuration {
 
 			var revision: Long = 0
 			var name: String = ""
+			@JsonProperty("message-revision")
 			var messageRevision: Long = 0
 
 		}
