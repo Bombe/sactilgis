@@ -15,6 +15,8 @@ class Configuration {
 		var targetDirectory: String = "git-repo"
 		@JsonProperty("use-commit-date-from-entry")
 		var useCommitDateFromEntry: Boolean = false
+		@JsonProperty("ignore-global-gitignore-file")
+		var ignoreGlobalGitIgnoreFile: Boolean = true
 
 	}
 
