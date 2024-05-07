@@ -121,7 +121,6 @@ fun main(vararg arguments: String) {
 					status.added + status.changed + status.modified + status.missing + status.removed + status.untracked + status.untrackedFolders + status.ignoredNotInIndex
 				}.filterNot { it.startsWith(".svn") }
 			}
-			print("(${filePatterns.size} files)")
 			filePatterns.takeIf { it.isNotEmpty() }?.let {
 				printTime("add") {
 					gitRepository.add().apply { it.forEach(this::addFilepattern) }.setUpdate(true).call()
