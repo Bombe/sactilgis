@@ -117,6 +117,25 @@ class RepositoryScannerTest {
 		)
 	}
 
+	@Test
+	fun `ambiguous paths are matched longest first`() {
+		simpleSvn.createCommit("testuser", "create directory") { commit ->
+			commit.addDirectory("/project1")
+		}
+		simpleSvn.createCommit("testuser", "create directory") { commit ->
+			commit.addDirectory("/project12")
+		}
+		repositoryScanner.addBranch("p1", BranchDefinition(1L to "/project1"))
+		repositoryScanner.addBranch("p12", BranchDefinition(1L to "/project12"))
+		val repositoryInformation = repositoryScanner.identifyBranches()
+		assertThat(
+			repositoryInformation.brachRevisions, allOf(
+				hasEntry(equalTo("p1"), contains(1L)),
+				hasEntry(equalTo("p12"), contains(2L))
+			)
+		)
+	}
+
 	private fun createTwoSimpleRepositories() {
 		simpleSvn.createCommit("testuser", "create directory") { commit ->
 			commit.addDirectory("/project1")

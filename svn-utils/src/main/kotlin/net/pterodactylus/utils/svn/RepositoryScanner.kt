@@ -46,8 +46,13 @@ class RepositoryScanner(svnUrl: SVNURL) {
 		branchDefinitions
 			.mapValues { (_, branchDefinition) -> branchDefinition.pathAt(revision) }
 			.filter { it.value != null }
-			.filterValues { p -> path.startsWith(p!!) }
+			.filterValues { p -> p == path }
 			.keys.singleOrNull()
+			?: branchDefinitions
+				.mapValues { (_, branchDefinition) -> branchDefinition.pathAt(revision) }
+				.filter { it.value != null }
+				.filterValues { p -> path.startsWith(p!!) }
+				.keys.maxByOrNull { it.length }
 
 	private fun findPathForBranchAtRevision(branch: String, revision: Long): String? =
 		branchDefinitions[branch]!!.pathAt(revision)
