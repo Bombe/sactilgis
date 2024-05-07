@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.util.StdConverter
 
 data class Configuration(
 	val general: General = General(),
-	val branches: List<Branch> = ArrayList(),
+	val branches: MutableList<Branch> = mutableListOf(),
 	val committers: MutableList<Committer> = mutableListOf()
 ) {
 
@@ -94,6 +94,7 @@ data class Configuration(
 		mergedConfiguration.general.ignoreGlobalGitIgnoreFile = configuration.general.ignoreGlobalGitIgnoreFile ?: general.ignoreGlobalGitIgnoreFile
 		mergedConfiguration.general.signCommits = configuration.general.signCommits ?: general.signCommits
 		mergedConfiguration.committers += committers.filterNot { it.subversionId in configuration.committers.map(Committer::subversionId) } + configuration.committers
+		mergedConfiguration.branches += configuration.branches
 		return mergedConfiguration
 	}
 

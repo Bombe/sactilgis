@@ -1,8 +1,10 @@
 package net.pterodactylus.sactilgis
 
+import net.pterodactylus.sactilgis.Configuration.Branch
 import net.pterodactylus.sactilgis.Configuration.Committer
 import net.pterodactylus.sactilgis.Configuration.General
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
@@ -152,6 +154,24 @@ class ConfigurationTest {
 				Committer("d", "D D", "d@d"),
 			)
 		)
+	}
+
+	@Test
+	fun `branches are merged by copying from the new configuration`() {
+		val oldConfiguration = Configuration().apply {
+			branches += listOf(
+				Branch().apply { name = "branch1" },
+				Branch().apply { name = "branch2" },
+			)
+		}
+		val newConfiguration = Configuration().apply {
+			branches += listOf(
+				Branch().apply { name = "branch3" },
+				Branch().apply { name = "branch4" },
+			)
+		}
+		val mergedConfiguration = oldConfiguration.merge(newConfiguration)
+		assertThat(mergedConfiguration.branches.map(Branch::name), contains("branch3", "branch4"))
 	}
 
 }
