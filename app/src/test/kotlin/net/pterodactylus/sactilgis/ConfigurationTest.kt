@@ -3,6 +3,7 @@ package net.pterodactylus.sactilgis
 import net.pterodactylus.sactilgis.Configuration.Committer
 import net.pterodactylus.sactilgis.Configuration.General
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
 
@@ -102,6 +103,55 @@ class ConfigurationTest {
 		val newConfiguration = Configuration(general = General(signCommits = null))
 		val mergedConfiguration = oldConfiguration.merge(newConfiguration)
 		assertThat(mergedConfiguration.general.signCommits, equalTo(true))
+	}
+
+	@Test
+	fun `merge concats the committers`() {
+		val oldConfiguration = Configuration().apply {
+			committers += listOf(
+				Committer("a", "A A", "a@a"),
+				Committer("b", "B B", "b@b"),
+			)
+		}
+		val newConfiguration = Configuration().apply {
+			committers += listOf(
+				Committer("c", "C C", "c@c"),
+				Committer("d", "D D", "d@d"),
+			)
+		}
+		val mergedConfiguration = oldConfiguration.merge(newConfiguration)
+		assertThat(
+			mergedConfiguration.committers, containsInAnyOrder(
+				Committer("a", "A A", "a@a"),
+				Committer("b", "B B", "b@b"),
+				Committer("c", "C C", "c@c"),
+				Committer("d", "D D", "d@d"),
+			)
+		)
+	}
+
+	@Test
+	fun `merge uses new committers when the subversion ID matches`() {
+		val oldConfiguration = Configuration().apply {
+			committers += listOf(
+				Committer("a", "A A", "a@a"),
+				Committer("b", "B B", "b@b"),
+			)
+		}
+		val newConfiguration = Configuration().apply {
+			committers += listOf(
+				Committer("a", "C C", "c@c"),
+				Committer("d", "D D", "d@d"),
+			)
+		}
+		val mergedConfiguration = oldConfiguration.merge(newConfiguration)
+		assertThat(
+			mergedConfiguration.committers, containsInAnyOrder(
+				Committer("a", "C C", "c@c"),
+				Committer("b", "B B", "b@b"),
+				Committer("d", "D D", "d@d"),
+			)
+		)
 	}
 
 }
