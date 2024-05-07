@@ -34,7 +34,7 @@ fun main(vararg arguments: String) {
 
 	val committers = configuration.committers
 		.associate { it.subversionId to PersonIdent(it.name, it.email) }
-		.withDefault { PersonIdent("Unknown", "unknown@svn") }
+		.withDefault { PersonIdent(it, "$it@svn") }
 	val committer = configuration.general.committer?.let { PersonIdent(it.name, it.email) }
 
 	fun findActualRevision(branch: String, revision: Long) =
