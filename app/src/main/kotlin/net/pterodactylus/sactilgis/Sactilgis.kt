@@ -132,7 +132,7 @@ fun main(vararg arguments: String) {
 			}
 			printTime("commit") {
 				val logEntry = simpleSvn.getLogEntry(path, revision)!!
-				val commitMessage = (fixRevisionsByBranch[branch]!![revision]?.message ?: logEntry.message) +
+				val commitMessage = (fixRevisionsByBranch[branch]!![revision]?.message?.replaceLineBreaks() ?: logEntry.message) +
 						"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
 				val commitAuthor = committers.getValue(logEntry.author)
 				val commit = gitRepository.commit()
@@ -161,6 +161,8 @@ fun main(vararg arguments: String) {
 		}
 	}
 }
+
+private fun String.replaceLineBreaks() = replace(Regex("\\\\n"), "\n")
 
 private fun <T : Any> printTime(text: String, action: () -> T): T {
 	val timeBefore = System.currentTimeMillis()
