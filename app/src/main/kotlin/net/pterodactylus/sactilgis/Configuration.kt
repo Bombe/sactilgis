@@ -4,23 +4,26 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.util.StdConverter
 
-class Configuration {
+data class Configuration(
+	val general: General = General(),
+	val branches: List<Branch> = ArrayList(),
+	val committers: List<Committer> = ArrayList()
+) {
 
-	class General {
-
+	data class General(
 		@JsonProperty("subversion-url")
-		var subversionUrl: String? = null
-		var committer: Committer? = null
+		var subversionUrl: String? = null,
+		@JsonProperty("committer")
+		var committer: Committer? = null,
 		@JsonProperty("target-directory")
-		var targetDirectory: String? = null
+		var targetDirectory: String? = null,
 		@JsonProperty("use-commit-date-from-entry")
-		var useCommitDateFromEntry: Boolean = false
+		var useCommitDateFromEntry: Boolean? = null,
 		@JsonProperty("ignore-global-gitignore-file")
-		var ignoreGlobalGitIgnoreFile: Boolean = true
+		var ignoreGlobalGitIgnoreFile: Boolean? = null,
 		@JsonProperty("sign-commits")
-		var signCommits: Boolean = false
-
-	}
+		var signCommits: Boolean? = null
+	)
 
 	class Branch {
 
@@ -75,17 +78,22 @@ class Configuration {
 
 	}
 
-	class Committer {
-
+	data class Committer(
 		@get:JsonProperty("id")
-		var subversionId: String = ""
-		var name: String = ""
+		var subversionId: String = "",
+		var name: String = "",
 		var email: String = ""
+	)
 
+	fun merge(configuration: Configuration): Configuration {
+		val mergedConfiguration = Configuration()
+		mergedConfiguration.general.subversionUrl = configuration.general.subversionUrl ?: general.subversionUrl
+		mergedConfiguration.general.committer = configuration.general.committer ?: general.committer
+		mergedConfiguration.general.targetDirectory = configuration.general.targetDirectory ?: general.targetDirectory
+		mergedConfiguration.general.useCommitDateFromEntry = configuration.general.useCommitDateFromEntry ?: general.useCommitDateFromEntry
+		mergedConfiguration.general.ignoreGlobalGitIgnoreFile = configuration.general.ignoreGlobalGitIgnoreFile ?: general.ignoreGlobalGitIgnoreFile
+		mergedConfiguration.general.signCommits = configuration.general.signCommits ?: general.signCommits
+		return mergedConfiguration
 	}
-
-	val general: General = General()
-	val branches: List<Branch> = ArrayList()
-	val committers: List<Committer> = ArrayList()
 
 }

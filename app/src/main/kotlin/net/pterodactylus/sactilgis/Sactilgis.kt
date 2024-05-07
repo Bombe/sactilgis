@@ -48,7 +48,7 @@ fun main(vararg arguments: String) {
 	workDirectory.deleteRecursively()
 	workDirectory.mkdirs()
 	Git.init().setBare(false).setDirectory(workDirectory).setInitialBranch("main").call().use { gitRepository ->
-		if (configuration.general.ignoreGlobalGitIgnoreFile) {
+		if (configuration.general.ignoreGlobalGitIgnoreFile != false) {
 			gitRepository.repository.config.setString("core", null, "excludesFile", "<none>")
 		}
 		val simpleSvn = SimpleSVN(svnUrl)
@@ -135,9 +135,9 @@ fun main(vararg arguments: String) {
 				val commit = gitRepository.commit()
 					.setAllowEmpty(true)
 					.setAuthor(PersonIdent(commitAuthor, logEntry.date))
-					.setCommitter((committer ?: commitAuthor).let { if (configuration.general.useCommitDateFromEntry) PersonIdent(it, logEntry.date) else it })
+					.setCommitter((committer ?: commitAuthor).let { if (configuration.general.useCommitDateFromEntry != false) PersonIdent(it, logEntry.date) else it })
 					.setMessage(commitMessage)
-					.setSign(configuration.general.signCommits)
+					.setSign(configuration.general.signCommits == true)
 					.call()
 				revisionCommits[revision] = commit
 				print("(${commit.id.name})")
@@ -151,7 +151,7 @@ fun main(vararg arguments: String) {
 						.setName(tag.name)
 						.setMessage(tagLogEntry.message)
 						.setTagger(PersonIdent(committer ?: committers.getValue(tagLogEntry.author), tagLogEntry.date))
-						.setAnnotated(true).setSigned(configuration.general.signCommits).call()
+						.setAnnotated(true).setSigned(configuration.general.signCommits == true).call()
 				}
 			}
 			println()
