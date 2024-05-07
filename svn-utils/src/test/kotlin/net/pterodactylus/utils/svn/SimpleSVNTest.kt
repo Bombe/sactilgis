@@ -10,7 +10,6 @@ import org.junit.jupiter.api.io.TempDir
 import org.tmatesoft.svn.core.SVNLogEntry
 import org.tmatesoft.svn.core.SVNNodeKind
 import org.tmatesoft.svn.core.SVNURL
-import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory
 import org.tmatesoft.svn.core.io.SVNLocationEntry
 import org.tmatesoft.svn.core.io.SVNRepository
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
@@ -180,7 +179,7 @@ class SimpleSVNTest {
 	@TempDir
 	private lateinit var temporaryDirectory: Path
 	private val svnUrl by lazy { createSvnRepository(Files.createTempDirectory(temporaryDirectory, "svn-repo").toFile()) }
-	private val simpleSvn by lazy { SimpleSVN(svnUrl) }
-	private val svnRepository: SVNRepository by lazy { FSRepositoryFactory.create(svnUrl) }
+	private val svnRepository: SVNRepository by lazy { SVNRepositoryFactory.create(svnUrl) }
+	private val simpleSvn by lazy { SimpleSVN(svnRepository) }
 
 }

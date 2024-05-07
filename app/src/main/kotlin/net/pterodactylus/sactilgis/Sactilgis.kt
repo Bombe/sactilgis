@@ -11,6 +11,8 @@ import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.revwalk.RevCommit
 import org.tmatesoft.svn.core.SVNDepth
 import org.tmatesoft.svn.core.SVNURL
+import org.tmatesoft.svn.core.auth.BasicAuthenticationManager
+import org.tmatesoft.svn.core.io.SVNRepositoryFactory
 import org.tmatesoft.svn.core.wc.SVNClientManager
 import org.tmatesoft.svn.core.wc.SVNRevision
 import org.tmatesoft.svn.core.wc.SVNStatus
@@ -30,8 +32,16 @@ fun main(vararg arguments: String) {
 		?: throw IllegalStateException("No configuration(s) given.")
 
 	val svnUrl = SVNURL.parseURIDecoded(configuration.general.subversionUrl ?: throw IllegalStateException("Subversion URL not set."))
+	val svnRepository = SVNRepositoryFactory.create(svnUrl)
+	configuration.general.subversionAuth?.let { subversionAuth ->
+		subversionAuth.username?.let { username ->
+			subversionAuth.password?.let { password ->
+				svnRepository.authenticationManager = BasicAuthenticationManager.newInstance(username, password.toCharArray())
+			}
+		} ?: throw IllegalStateException("Username and Password not given.")
+	}
 	val branchDefinitions = configuration.branches.associate { branch -> branch.name to BranchDefinition(*branch.revisionPaths.map { it.revision to it.path }.toTypedArray()) }
-	val repositoryScanner = RepositoryScanner(svnUrl)
+	val repositoryScanner = RepositoryScanner(svnRepository)
 	branchDefinitions.forEach(repositoryScanner::addBranch)
 	val repositoryInformation = repositoryScanner.identifyBranches()
 
@@ -54,8 +64,9 @@ fun main(vararg arguments: String) {
 		if (configuration.general.ignoreGlobalGitIgnoreFile != false) {
 			gitRepository.repository.config.setString("core", null, "excludesFile", "<none>")
 		}
-		val simpleSvn = SimpleSVN(svnUrl)
+		val simpleSvn = SimpleSVN(svnRepository)
 		val svnClientManager = SVNClientManager.newInstance()
+		svnClientManager.setAuthenticationManager(svnRepository.authenticationManager)
 		val revisionCommits = mutableMapOf<Long, RevCommit>()
 		var currentBranch = "main"
 		var currentPath = "/"

@@ -8,6 +8,7 @@ import org.hamcrest.Matchers.hasEntry
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.tmatesoft.svn.core.SVNURL
+import org.tmatesoft.svn.core.io.SVNRepository
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
 import java.io.File
 import java.nio.file.Files
@@ -155,7 +156,8 @@ class RepositoryScannerTest {
 	@TempDir
 	private lateinit var temporaryDirectory: Path
 	private val svnUrl by lazy { createSvnRepository(Files.createTempDirectory(temporaryDirectory, "svn-repo").toFile()) }
-	private val simpleSvn by lazy { SimpleSVN(svnUrl) }
-	private val repositoryScanner by lazy { RepositoryScanner(svnUrl) }
+	private val svnRepository by lazy { SVNRepositoryFactory.create(svnUrl) }
+	private val simpleSvn by lazy { SimpleSVN(svnRepository) }
+	private val repositoryScanner by lazy { RepositoryScanner(svnRepository) }
 
 }

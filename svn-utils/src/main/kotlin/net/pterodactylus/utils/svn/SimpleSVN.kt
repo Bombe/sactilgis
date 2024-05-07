@@ -4,18 +4,15 @@ import org.tmatesoft.svn.core.SVNCommitInfo
 import org.tmatesoft.svn.core.SVNErrorCode
 import org.tmatesoft.svn.core.SVNException
 import org.tmatesoft.svn.core.SVNLogEntry
-import org.tmatesoft.svn.core.SVNURL
 import org.tmatesoft.svn.core.io.SVNRepository
-import org.tmatesoft.svn.core.io.SVNRepositoryFactory
 import org.tmatesoft.svn.core.io.diff.SVNDeltaGenerator
-import org.tmatesoft.svn.core.wc.SVNRevision
 import org.tmatesoft.svn.core.wc.SVNWCUtil
 import java.io.InputStream
 
 /**
  * (Hopefully) Simple-to-use wrapper around SVNKit.
  */
-class SimpleSVN(svnUrl: SVNURL) {
+class SimpleSVN(private val svnRepository: SVNRepository) {
 
 	fun createCommit(username: String, logMessage: String, commitConsumer: (SimpleCommit) -> Unit) =
 		SimpleCommit(username, logMessage).also(commitConsumer).commit()
@@ -32,8 +29,6 @@ class SimpleSVN(svnUrl: SVNURL) {
 			throw svnException
 		}
 	}
-
-	private val svnRepository: SVNRepository = SVNRepositoryFactory.create(svnUrl)
 
 	inner class SimpleCommit(private val username: String, private val logMessage: String) {
 

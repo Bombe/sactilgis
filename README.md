@@ -44,6 +44,9 @@ This section contains certain top-level configuration settings.
 subversion-url
 : The URL of the Subversion repository. Supports at least `svn://` and `file://` repository URLs; may support `http://` and `https://` as well (has never been tested).
 
+subversion-auth
+: Contains a `username` and a `password` element that will be used to authenticate all access to the configured repository. This element can be omitted completely if authorization is unnecessary; if present, its elements *must* be set.
+
 target-directory
 : The directory in which to store the resulting Git repository. This directory will be *removed and re-created* before the conversion starts!
 
@@ -181,7 +184,7 @@ message
 In order to be able to e.g. define a common mapping for committers (because in a corporate environment you have many repositories but they are all being worked on by the same people) it is possible to specify multiple XML files on the command line. In general, the values from later files are used to override values from earlier files. The following exceptions apply:
 
 1. Non-present tags in the `general` sections remain unchanged.
-2. The `committer` value in the `general` section can only be overridden in total, i.e. it is not possible to only change the name of the committer.
+2. The `committer` and the `subversion-auth` value in the `general` section can only be overridden in total, i.e. it is not possible to only change the name of the committer, or the password for the authentication.
 3. The committers from the `committers` section are merged by the subversion ID, i.e. if a later file has a committer with the same subversion ID as a previous file, the committer from the later file is used.
 4. Branches are not merged but only copied from the later files. That means that any branch definitions should be in the last file only.
 

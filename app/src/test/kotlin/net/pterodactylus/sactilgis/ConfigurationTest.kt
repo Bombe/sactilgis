@@ -3,6 +3,7 @@ package net.pterodactylus.sactilgis
 import net.pterodactylus.sactilgis.Configuration.Branch
 import net.pterodactylus.sactilgis.Configuration.Committer
 import net.pterodactylus.sactilgis.Configuration.General
+import net.pterodactylus.sactilgis.Configuration.SubversionAuth
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.containsInAnyOrder
@@ -25,6 +26,22 @@ class ConfigurationTest {
 		val newConfiguration = Configuration(general = General(subversionUrl = null))
 		val mergedConfiguration = oldConfiguration.merge(newConfiguration)
 		assertThat(mergedConfiguration.general.subversionUrl, equalTo("old-svn-url"))
+	}
+
+	@Test
+	fun `merge overwrites subversion auth`() {
+		val oldConfiguration = Configuration(general = General(subversionAuth = SubversionAuth("old-user", "old-password")))
+		val newConfiguration = Configuration(general = General(subversionAuth = SubversionAuth("new-user", "new-password")))
+		val mergedConfiguration = oldConfiguration.merge(newConfiguration)
+		assertThat(mergedConfiguration.general.subversionAuth, equalTo(SubversionAuth("new-user", "new-password")))
+	}
+
+	@Test
+	fun `merge does not overwrite subversion auth if new subversion auth is null`() {
+		val oldConfiguration = Configuration(general = General(subversionAuth = SubversionAuth("old-user", "old-password")))
+		val newConfiguration = Configuration(general = General(subversionAuth = null))
+		val mergedConfiguration = oldConfiguration.merge(newConfiguration)
+		assertThat(mergedConfiguration.general.subversionAuth, equalTo(SubversionAuth("old-user", "old-password")))
 	}
 
 	@Test

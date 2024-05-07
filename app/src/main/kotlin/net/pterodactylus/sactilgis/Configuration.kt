@@ -13,6 +13,8 @@ data class Configuration(
 	data class General(
 		@JsonProperty("subversion-url")
 		var subversionUrl: String? = null,
+		@JsonProperty("subversion-auth")
+		var subversionAuth: SubversionAuth? = null,
 		@JsonProperty("committer")
 		var committer: Committer? = null,
 		@JsonProperty("target-directory")
@@ -23,6 +25,13 @@ data class Configuration(
 		var ignoreGlobalGitIgnoreFile: Boolean? = null,
 		@JsonProperty("sign-commits")
 		var signCommits: Boolean? = null
+	)
+
+	data class SubversionAuth(
+		@JsonProperty("username")
+		var username: String? = null,
+		@JsonProperty("password")
+		var password: String? = null
 	)
 
 	class Branch {
@@ -88,6 +97,7 @@ data class Configuration(
 	fun merge(configuration: Configuration): Configuration {
 		val mergedConfiguration = Configuration()
 		mergedConfiguration.general.subversionUrl = configuration.general.subversionUrl ?: general.subversionUrl
+		mergedConfiguration.general.subversionAuth = configuration.general.subversionAuth ?: general.subversionAuth
 		mergedConfiguration.general.committer = configuration.general.committer ?: general.committer
 		mergedConfiguration.general.targetDirectory = configuration.general.targetDirectory ?: general.targetDirectory
 		mergedConfiguration.general.useCommitDateFromEntry = configuration.general.useCommitDateFromEntry ?: general.useCommitDateFromEntry
