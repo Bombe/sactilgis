@@ -26,7 +26,7 @@ fun main(vararg arguments: String) {
 
 	val configuration = xmlMapper.readValue(File(arguments.first()), Configuration::class.java)
 
-	val svnUrl = SVNURL.parseURIDecoded(configuration.general.subversionUrl)
+	val svnUrl = SVNURL.parseURIDecoded(configuration.general.subversionUrl ?: throw IllegalStateException("Subversion URL not set."))
 	val branchDefinitions = configuration.branches.associate { branch -> branch.name to BranchDefinition(*branch.revisionPaths.map { it.revision to it.path }.toTypedArray()) }
 	val repositoryScanner = RepositoryScanner(svnUrl)
 	branchDefinitions.forEach(repositoryScanner::addBranch)

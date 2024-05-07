@@ -9,7 +9,7 @@ class Configuration {
 	class General {
 
 		@JsonProperty("subversion-url")
-		var subversionUrl: String = ""
+		var subversionUrl: String? = null
 		var committer: Committer? = null
 		@JsonProperty("target-directory")
 		var targetDirectory: String = "git-repo"
