@@ -20,7 +20,7 @@ And already your conversion should be underway!
 
 ## Configuration
 
-The configuration is done using an XML file. Under the top level `configuration` tag, there are three more sections that are used to control all of sactilgis’s behaviour: `general`, `committers`, and `branches`.
+The configuration is done using one or more XML files (see [below](#merging-configurations)). Under the top level `configuration` tag, there are three more sections that are used to control all of sactilgis’s behaviour: `general`, `committers`, and `branches`.
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -175,6 +175,17 @@ revision
 
 message
 : The new message for this revision.
+
+## Merging Configurations
+
+In order to be able to e.g. define a common mapping for committers (because in a corporate environment you have many repositories but they are all being worked on by the same people) it is possible to specify multiple XML files on the command line. In general, the values from later files are used to override values from earlier files. The following exceptions apply:
+
+1. Non-present tags in the `general` sections remain unchanged.
+2. The `committer` value in the `general` section can only be overridden in total, i.e. it is not possible to only change the name of the committer.
+3. The committers from the `committers` section are merged by the subversion ID, i.e. if a later file has a committer with the same subversion ID as a previous file, the committer from the later file is used.
+4. Branches are not merged but only copied from the later files. That means that any branch definitions should be in the last file only.
+
+This mechanism makes it possible to define a number of settings that can be applied to any number of different projects. The most notable target for use is the `committers` section.
 
 ## TODO
 

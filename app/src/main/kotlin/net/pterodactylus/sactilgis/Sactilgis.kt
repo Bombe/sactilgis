@@ -24,7 +24,10 @@ import java.nio.file.attribute.BasicFileAttributes
 
 fun main(vararg arguments: String) {
 
-	val configuration = xmlMapper.readValue(File(arguments.first()), Configuration::class.java)
+	val configuration = arguments.map(::File).filter(File::exists)
+		.map { xmlMapper.readValue(it, Configuration::class.java) }
+		.reduceOrNull { mergedConfiguration, configuration -> mergedConfiguration.merge(configuration) }
+		?: throw IllegalStateException("No configuration(s) given.")
 
 	val svnUrl = SVNURL.parseURIDecoded(configuration.general.subversionUrl ?: throw IllegalStateException("Subversion URL not set."))
 	val branchDefinitions = configuration.branches.associate { branch -> branch.name to BranchDefinition(*branch.revisionPaths.map { it.revision to it.path }.toTypedArray()) }
