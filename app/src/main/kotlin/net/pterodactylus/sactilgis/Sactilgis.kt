@@ -5,7 +5,6 @@ import net.pterodactylus.utils.svn.BranchDefinition
 import net.pterodactylus.utils.svn.RepositoryScanner
 import net.pterodactylus.utils.svn.SimpleSVN
 import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.api.MergeCommand.FastForwardMode
 import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.revwalk.RevCommit
@@ -16,13 +15,8 @@ import org.tmatesoft.svn.core.io.SVNRepositoryFactory
 import org.tmatesoft.svn.core.wc.SVNClientManager
 import org.tmatesoft.svn.core.wc.SVNRevision
 import org.tmatesoft.svn.core.wc.SVNStatus
+import org.tmatesoft.svn.core.wc.SVNStatusType.STATUS_NORMAL
 import java.io.File
-import java.io.IOException
-import java.nio.file.FileVisitResult
-import java.nio.file.FileVisitor
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.attribute.BasicFileAttributes
 
 fun main(vararg arguments: String) {
 
@@ -95,27 +89,14 @@ fun main(vararg arguments: String) {
 					}
 				}
 				currentBranch = branch
-			}
-			mergeRevisionsByBranch[branch]!![revision]?.let { merge ->
-				print("(merging ${merge.branch})")
-				printTime("merge") {
-					gitRepository.merge().setFastForward(FastForwardMode.NO_FF).include(gitRepository.repository.findRef(merge.branch)).setCommit(false).call()
-				}
 				printTime("clean") {
 					val statusLogs = mutableListOf<SVNStatus>()
 					svnClientManager.statusClient.doStatus(workDirectory, svnRevision, SVNDepth.INFINITY, false, true, false, false, statusLogs::add, null)
 					statusLogs
 						.filterNot { it.file == File(workDirectory, ".git") }
-						.filterNot(SVNStatus::isVersioned)
-						.map(SVNStatus::getFile).map(File::toPath)
-						.forEach(::removeFile)
-				}
-				printTime("verify") {
-					val statusLogs = mutableListOf<SVNStatus>()
-					svnClientManager.statusClient.doStatus(workDirectory, svnRevision, SVNDepth.INFINITY, false, true, false, false, statusLogs::add, null)
-					if (statusLogs.any(SVNStatus::isConflicted)) {
-						print("(\u001b[93;41;1m conflict \u001b[m)")
-					}
+						.filterNot { it.contentsStatus == STATUS_NORMAL }
+						.map(SVNStatus::getFile)
+						.forEach(File::deleteRecursively)
 				}
 			}
 			val path = branchDefinitions[branch]!!.pathAt(revision)!!
@@ -146,6 +127,10 @@ fun main(vararg arguments: String) {
 				val commitMessage = (fixRevisionsByBranch[branch]!![revision]?.message?.replaceLineBreaks() ?: logEntry.message) +
 						"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
 				val commitAuthor = committers.getValue(logEntry.author)
+				mergeRevisionsByBranch[branch]!![revision]?.let { merge ->
+					val commitId = revisionCommits[findActualRevision(merge.branch, revision)]!!
+					gitRepository.repository.writeMergeHeads(listOf(commitId))
+				}
 				val commit = gitRepository.commit()
 					.setAllowEmpty(true)
 					.setAuthor(PersonIdent(commitAuthor, logEntry.date))
@@ -189,28 +174,3 @@ private fun Git.branchDoesNotExist(branch: String) =
 	"refs/heads/$branch" !in branchList().call().map(Ref::getName)
 
 private val xmlMapper = XmlMapper()
-
-private fun removeFile(path: Path) {
-	Files.walkFileTree(path, object : FileVisitor<Path> {
-		override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-			if ((dir == path.resolve(".git") || (dir == path.resolve(".svn")))) {
-				return FileVisitResult.SKIP_SUBTREE
-			}
-			return FileVisitResult.CONTINUE
-		}
-
-		override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-			file.toFile().delete()
-			return FileVisitResult.CONTINUE
-		}
-
-		override fun visitFileFailed(file: Path, exc: IOException?): FileVisitResult {
-			return FileVisitResult.TERMINATE
-		}
-
-		override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
-			dir.toFile().delete()
-			return FileVisitResult.CONTINUE
-		}
-	})
-}
