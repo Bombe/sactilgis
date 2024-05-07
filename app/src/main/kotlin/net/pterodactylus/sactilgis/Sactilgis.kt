@@ -44,7 +44,7 @@ fun main(vararg arguments: String) {
 	val tagRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.tags.associateBy { findActualRevision(branch.name, it.revision) } }
 	val fixRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.fixes.associateBy { it.revision } }
 
-	val workDirectory = File(configuration.general.targetDirectory)
+	val workDirectory = File(configuration.general.targetDirectory ?: throw IllegalStateException("No target directory given."))
 	workDirectory.deleteRecursively()
 	workDirectory.mkdirs()
 	Git.init().setBare(false).setDirectory(workDirectory).setInitialBranch("main").call().use { gitRepository ->

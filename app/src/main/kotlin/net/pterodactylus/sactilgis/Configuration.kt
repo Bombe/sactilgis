@@ -12,7 +12,7 @@ class Configuration {
 		var subversionUrl: String? = null
 		var committer: Committer? = null
 		@JsonProperty("target-directory")
-		var targetDirectory: String = "git-repo"
+		var targetDirectory: String? = null
 		@JsonProperty("use-commit-date-from-entry")
 		var useCommitDateFromEntry: Boolean = false
 		@JsonProperty("ignore-global-gitignore-file")
