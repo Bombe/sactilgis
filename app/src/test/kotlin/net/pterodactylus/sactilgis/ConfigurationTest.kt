@@ -191,4 +191,17 @@ class ConfigurationTest {
 		assertThat(mergedConfiguration.branches.map(Branch::name), contains("branch3", "branch4"))
 	}
 
+	@Test
+	fun `merge does not overwrite branches with empty branches`() {
+		val oldConfiguration = Configuration().apply {
+			branches += listOf(
+				Branch().apply { name = "branch1" },
+				Branch().apply { name = "branch2" },
+			)
+		}
+		val newConfiguration = Configuration()
+		val mergedConfiguration = oldConfiguration.merge(newConfiguration)
+		assertThat(mergedConfiguration.branches.map(Branch::name), contains("branch1", "branch2"))
+	}
+
 }

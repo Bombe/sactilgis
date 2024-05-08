@@ -104,7 +104,7 @@ data class Configuration(
 		mergedConfiguration.general.ignoreGlobalGitIgnoreFile = configuration.general.ignoreGlobalGitIgnoreFile ?: general.ignoreGlobalGitIgnoreFile
 		mergedConfiguration.general.signCommits = configuration.general.signCommits ?: general.signCommits
 		mergedConfiguration.committers += committers.filterNot { it.subversionId in configuration.committers.map(Committer::subversionId) } + configuration.committers
-		mergedConfiguration.branches += configuration.branches
+		mergedConfiguration.branches += configuration.branches.takeIf(List<*>::isNotEmpty) ?: branches
 		return mergedConfiguration
 	}
 
