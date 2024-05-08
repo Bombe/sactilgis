@@ -34,6 +34,7 @@ fun main(vararg arguments: String) {
 			}
 		} ?: throw IllegalStateException("Username and Password not given.")
 	}
+	configuration.branches.takeIf(List<*>::isNotEmpty) ?: throw IllegalStateException("No branches configured.")
 	val branchDefinitions = configuration.branches.associate { branch -> branch.name to BranchDefinition(*branch.revisionPaths.map { it.revision to it.path }.toTypedArray()) }
 	val repositoryScanner = RepositoryScanner(svnRepository)
 	branchDefinitions.forEach(repositoryScanner::addBranch)
