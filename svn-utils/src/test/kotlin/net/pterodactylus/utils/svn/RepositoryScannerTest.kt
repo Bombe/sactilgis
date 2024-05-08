@@ -5,6 +5,7 @@ import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasEntry
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.tmatesoft.svn.core.SVNURL
@@ -135,6 +136,18 @@ class RepositoryScannerTest {
 				hasEntry(equalTo("p12"), contains(2L))
 			)
 		)
+	}
+
+	@Test
+	fun `branches created from outside any existing definitions are still valid`() {
+		createTwoSimpleRepositories()
+		simpleSvn.createCommit("testuser", "create project") { commit ->
+			commit.copyDirectory("/project3", "/project1", 4)
+		}
+		repositoryScanner.addBranch("p3", BranchDefinition(5L to "/project3"))
+		val repositoryInformation = repositoryScanner.identifyBranches()
+		assertThat(repositoryInformation.brachRevisions["p3"], contains(5L))
+		assertThat(repositoryInformation.branchCreationPoints["p3"], nullValue())
 	}
 
 	private fun createTwoSimpleRepositories() {

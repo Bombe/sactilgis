@@ -26,9 +26,10 @@ class RepositoryScanner(private val svnRepository: SVNRepository) {
 					if (branch !in branchRevisions) {
 						logEntry.changedPaths[path]?.let { branchPath ->
 							if (branchPath.copyRevision != -1L) {
-								val sourceBranch = findBranchByPathAndRevision(branchPath.copyPath, branchPath.copyRevision)!!
-								val lastRevisionOnSourceBranch = branchRevisions[sourceBranch]!!.floor(branchPath.copyRevision)!!
-								branchCreationPoints[branch] = branchPath.copyPath to lastRevisionOnSourceBranch
+								findBranchByPathAndRevision(branchPath.copyPath, branchPath.copyRevision)?.let { sourceBranch ->
+									val lastRevisionOnSourceBranch = branchRevisions[sourceBranch]!!.floor(branchPath.copyRevision)!!
+									branchCreationPoints[branch] = branchPath.copyPath to lastRevisionOnSourceBranch
+								}
 							}
 						}
 					}
