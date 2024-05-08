@@ -6,6 +6,8 @@ The main purpose of sactilgis is to enable a user to create a Git repository for
 
 However, due to the large number of things you can do to a Subversion repository, only the really menial tasks can be automated; sactilgis needs your help for some high-level tasks, such as which branches do exist and where (and when!) are they, where are branches merged, which version has actually been tagged. With that information sactilgis should be able to create a reasonable Git representation of your project, straight from Subversion.
 
+However, certain things are impractical to do at this stage of conversion, so in almost every case further massaging of the repository (e.g. using `git-filter-branch`) is recommended — unless you’re already satisfied.
+
 ## Building
 
 sactilgis comes with its own Maven wrapper, so building it should be as easy as:
