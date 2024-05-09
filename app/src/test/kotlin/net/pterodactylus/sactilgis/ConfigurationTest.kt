@@ -1,6 +1,11 @@
 package net.pterodactylus.sactilgis
 
 import net.pterodactylus.sactilgis.Configuration.Branch
+import net.pterodactylus.sactilgis.Configuration.Branch.Fix
+import net.pterodactylus.sactilgis.Configuration.Branch.Merge
+import net.pterodactylus.sactilgis.Configuration.Branch.Origin
+import net.pterodactylus.sactilgis.Configuration.Branch.RevisionPath
+import net.pterodactylus.sactilgis.Configuration.Branch.Tag
 import net.pterodactylus.sactilgis.Configuration.Committer
 import net.pterodactylus.sactilgis.Configuration.General
 import net.pterodactylus.sactilgis.Configuration.SubversionAuth
@@ -9,6 +14,8 @@ import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertThrows
 
 class ConfigurationTest {
 
@@ -202,6 +209,175 @@ class ConfigurationTest {
 		val newConfiguration = Configuration()
 		val mergedConfiguration = oldConfiguration.merge(newConfiguration)
 		assertThat(mergedConfiguration.branches.map(Branch::name), contains("branch1", "branch2"))
+	}
+
+	@Test
+	fun `(almost) new configuration verifies successfully`() {
+		val configuration = Configuration().apply {
+			branches.add(Branch().apply {
+				name = "init"
+				revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+			})
+		}
+		assertDoesNotThrow(configuration::verify)
+	}
+
+	@Test
+	fun `configuration with all features used verifies successfully`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "main"
+					revisionPaths.add(RevisionPath().apply { revision = 3; path = "/trunk" })
+					merges.add(Merge().apply { revision = 8; branch = "feature-1" })
+				},
+				Branch().apply {
+					name = "feature-1"
+					origin = Origin(branch = "main", revision = 2)
+					revisionPaths.add(RevisionPath().apply { revision = 4; path = "/branches/feature-1" })
+					tags.add(Tag().apply { name = "tag-feature"; revision = 5; messageRevision = 6 })
+				},
+				Branch().apply {
+					name = "feature-2"
+					origin = Origin(tag = "tag-feature")
+					revisionPaths.add(RevisionPath().apply { revision = 8; path = "/branches/feature-2" })
+					fixes.add(Fix().apply { revision = 12; message = "New message" })
+				}
+			)
+		}
+		assertDoesNotThrow(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains space`() {
+		val configuration = Configuration().apply {
+			branches += listOf(Branch().apply { name = "other branch" })
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch has no revision paths`() {
+		val configuration = Configuration().apply {
+			branches += listOf(Branch().apply { name = "branch" })
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tags with spaces are found`() {
+		// actually, Git disallows a bunch of things in ref names; check man git-check-ref-format for details.
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+					tags.add(Tag().apply { name = "tag 1"; revision = 2; messageRevision = 3 })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if origin tags with spaces are found`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					origin = Origin(tag = "wrong tag")
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if duplicate tags are defined`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+					tags.add(Tag().apply { name = "tag1"; revision = 2; messageRevision = 3 })
+					tags.add(Tag().apply { name = "tag1"; revision = 4; messageRevision = 5 })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if origin tag does not exist`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+					tags.add(Tag().apply { name = "tag1"; revision = 2; messageRevision = 3 })
+				},
+				Branch().apply {
+					name = "second"
+					origin = Origin(tag = "wrong-tag")
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if duplicate branches are defined`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+				},
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch to merge does not exist`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+				},
+				Branch().apply {
+					name = "second"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+					merges.add(Merge().apply { revision = 3; branch = "wrong" })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if origin branch does not exist`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+				},
+				Branch().apply {
+					name = "second"
+					origin = Origin(branch = "wrong branch", revision = 1)
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
 	}
 
 }

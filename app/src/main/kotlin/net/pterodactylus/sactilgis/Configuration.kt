@@ -3,6 +3,9 @@ package net.pterodactylus.sactilgis
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.util.StdConverter
+import net.pterodactylus.sactilgis.Configuration.Branch.Merge
+import net.pterodactylus.sactilgis.Configuration.Branch.Origin
+import net.pterodactylus.sactilgis.Configuration.Branch.Tag
 
 data class Configuration(
 	val general: General = General(),
@@ -39,18 +42,18 @@ data class Configuration(
 		var name: String = ""
 		var origin: Origin? = null
 		@JsonProperty("revision-paths")
-		val revisionPaths: List<RevisionPath> = ArrayList()
-		val merges: List<Merge> = ArrayList()
-		val tags: List<Tag> = ArrayList()
-		val fixes: List<Fix> = ArrayList()
+		val revisionPaths: MutableList<RevisionPath> = mutableListOf()
+		val merges: MutableList<Merge> = mutableListOf()
+		val tags: MutableList<Tag> = mutableListOf()
+		val fixes: MutableList<Fix> = mutableListOf()
 
 		data class Origin(
 			@JsonProperty("tag")
 			var tag: String? = null,
 			@JsonProperty("branch")
-			var branch: String? = "",
+			var branch: String? = null,
 			@JsonProperty("revision")
-			var revision: Long? = 0,
+			var revision: Long? = null,
 		)
 
 		class RevisionConverter : StdConverter<String?, Long?>() {
@@ -117,4 +120,46 @@ data class Configuration(
 		return mergedConfiguration
 	}
 
+	fun verify() {
+		branches.filter { " " in it.name }.onNotEmpty { throw IllegalStateException("Invalid branch names: $it") }
+		branches.filter { it.revisionPaths.isEmpty() }.onNotEmpty { throw IllegalStateException("Empty revision paths: $it") }
+
+		val allDefinedBranches = branches.map(Branch::name)
+		if (allDefinedBranches.size != allDefinedBranches.distinct().size) {
+			throw IllegalStateException("Duplicate branches found: ${allDefinedBranches.groupBy { it }.filterValues { it.size > 1 }.keys}")
+		}
+
+		val allDefinedTags = branches.flatMap { it.tags }.map(Tag::name)
+		if (allDefinedTags.size != allDefinedTags.distinct().size) {
+			throw IllegalStateException("Duplicate tags found: ${allDefinedTags.groupBy { it }.filterValues { it.size > 1 }.keys}")
+		}
+		if (allDefinedTags.any { " " in it }) {
+			throw IllegalStateException("Invalid tag found: ${allDefinedTags.filter { " " in it }}")
+		}
+
+		val allOriginTags = branches.mapNotNull(Branch::origin).mapNotNull(Origin::tag)
+		if (allOriginTags.any { " " in it }) {
+			throw IllegalStateException("Invalid origin tag found: ${allOriginTags.filter { " " in it }}")
+		}
+		if (!allDefinedTags.containsAll(allOriginTags)) {
+			throw IllegalStateException("Missing origin tag found: ${allOriginTags - allDefinedTags}")
+		}
+
+		val allOriginBranches = branches.mapNotNull(Branch::origin).mapNotNull(Origin::branch)
+		if (allOriginBranches.any { it !in allDefinedBranches }) {
+			throw IllegalStateException("Missing origin branch found: ${allOriginBranches.filter { it !in allDefinedBranches }}")
+		}
+
+		val allMerges = branches.flatMap(Branch::merges)
+		if (allMerges.any { it.branch !in allDefinedBranches }) {
+			throw IllegalStateException("Missing branch to merge found: ${allMerges.filter { it.branch !in allDefinedBranches }.map(Merge::branch)}")
+		}
+	}
+
+}
+
+private fun <T> Collection<T>.onNotEmpty(action: (Collection<T>) -> Unit) = run {
+	if (isNotEmpty()) {
+		action(this)
+	}
 }
