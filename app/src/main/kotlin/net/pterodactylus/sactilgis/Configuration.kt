@@ -45,10 +45,12 @@ data class Configuration(
 		val fixes: List<Fix> = ArrayList()
 
 		data class Origin(
+			@JsonProperty("tag")
+			var tag: String? = null,
 			@JsonProperty("branch")
-			var branch: String = "",
+			var branch: String? = "",
 			@JsonProperty("revision")
-			var revision: Long = 0,
+			var revision: Long? = 0,
 		)
 
 		class RevisionConverter : StdConverter<String?, Long?>() {

@@ -1,6 +1,7 @@
 package net.pterodactylus.sactilgis
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import net.pterodactylus.sactilgis.Configuration.Branch
 import net.pterodactylus.utils.svn.BranchDefinition
 import net.pterodactylus.utils.svn.RepositoryScanner
 import net.pterodactylus.utils.svn.SimpleSVN
@@ -24,6 +25,7 @@ fun main(vararg arguments: String) {
 		.map { xmlMapper.readValue(it, Configuration::class.java) }
 		.reduceOrNull { mergedConfiguration, configuration -> mergedConfiguration.merge(configuration) }
 		?: throw IllegalStateException("No configuration(s) given.")
+	configuration.verify()
 
 	val svnUrl = SVNURL.parseURIDecoded(configuration.general.subversionUrl ?: throw IllegalStateException("Subversion URL not set."))
 	val svnRepository = SVNRepositoryFactory.create(svnUrl)
@@ -34,7 +36,6 @@ fun main(vararg arguments: String) {
 			}
 		} ?: throw IllegalStateException("Username and Password not given.")
 	}
-	configuration.branches.takeIf(List<*>::isNotEmpty) ?: throw IllegalStateException("No branches configured.")
 	val branchDefinitions = configuration.branches.associate { branch -> branch.name to BranchDefinition(*branch.revisionPaths.map { it.revision to it.path }.toTypedArray()) }
 	val repositoryScanner = RepositoryScanner(svnRepository)
 	branchDefinitions.forEach(repositoryScanner::addBranch)
@@ -48,6 +49,11 @@ fun main(vararg arguments: String) {
 	fun findActualRevision(branch: String, revision: Long) =
 		repositoryInformation.brachRevisions[branch]!!.headSet(revision + 1).last()
 
+	val branchRevisionsByTag = configuration.branches.flatMap { branch -> branch.tags.map { it.name to (branch.name to it.revision) } }.toMap()
+
+	fun findActualRevision(tag: String) =
+		branchRevisionsByTag[tag]?.let { findActualRevision(it.first, it.second) }
+
 	fun findBranchByPathAndRevision(path: String, revision: Long) =
 		branchDefinitions.entries.single { entry ->
 			(entry.value.pathAt(revision) == path) || entry.value.pathAt(revision)?.startsWith("$path/") ?: false
@@ -56,13 +62,17 @@ fun main(vararg arguments: String) {
 	val mergeRevisionsByBranch = configuration.branches.associate { it.name to it.merges.associateBy { it.revision } }
 	val tagRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.tags.associateBy { findActualRevision(branch.name, it.revision) } }
 	val fixRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.fixes.associateBy { it.revision } }
-	val branchOrigins = configuration.branches.associate { branch -> branch.name to branch.origin }
+	val branchOrigins = configuration.branches.associate { branch -> branch.name to branch.origin }.filterValues { it != null }
+
+	(configuration.branches.map(Branch::name) - repositoryInformation.branchCreationPoints.keys - branchOrigins.keys).takeIf { it.isNotEmpty() }?.also {
+		println("Branches without creation points: " + it.map { it to branchDefinitions[it]!!.earliestRevision })
+	}
 
 	val worklist = Worklist(
 		repositoryInformation.brachRevisions,
 		repositoryInformation.branchCreationPoints.mapValues { entry -> findBranchByPathAndRevision(entry.value.first, entry.value.second) to entry.value.second } +
-				branchOrigins.filterValues { it != null }.mapValues { it.value!!.branch to it.value!!.revision },
-		mergeRevisionsByBranch.mapValues { it.value.mapValues { it.value.branch to it.value.revision } }
+				branchOrigins.mapValues { it.value!!.tag?.let { branchRevisionsByTag[it]!! } ?: (it.value!!.branch!! to it.value!!.revision!!) },
+		mergeRevisionsByBranch.mapValues { it.value.mapValues { it.value.tag?.let { branchRevisionsByTag[it]!! } ?: (it.value.branch!! to it.value.revision) } }
 	)
 
 	val workDirectory = File(configuration.general.targetDirectory ?: throw IllegalStateException("No target directory given."))
@@ -87,11 +97,12 @@ fun main(vararg arguments: String) {
 				if (gitRepository.branchDoesNotExist(branch)) {
 					print("(creating $branch)")
 					val originalRevision = repositoryInformation.branchCreationPoints[branch]?.second
-					val startPoint = originalRevision?.let { revisionCommits[it]!!.name }
-						?: branchOrigins[branch]?.let { revisionCommits[findActualRevision(it.branch, it.revision)]!!.name }
+					val startPoint = originalRevision
+						?: branchOrigins[branch]?.tag?.let(::findActualRevision)
+						?: branchOrigins[branch]?.let { findActualRevision(it.branch!!, it.revision!!) }
 					if (startPoint != null) {
 						printTime("create") {
-							gitRepository.checkout().setCreateBranch(true).setName(branch).setStartPoint(startPoint).call()
+							gitRepository.checkout().setCreateBranch(true).setName(branch).setStartPoint(revisionCommits[startPoint]!!.name).call()
 						}
 					} else {
 						printTime("orphan") {
@@ -144,7 +155,7 @@ fun main(vararg arguments: String) {
 						"\n\nSubversion-Original-Commit: $svnUrl$path@$revision\nSubversion-Original-Author: ${logEntry.author}"
 				val commitAuthor = committers.getValue(logEntry.author)
 				mergeRevisionsByBranch[branch]!![revision]?.let { merge ->
-					val commitId = revisionCommits[findActualRevision(merge.branch, revision)]!!
+					val commitId = revisionCommits[merge.tag?.let { findActualRevision(it)!! } ?: findActualRevision(merge.branch!!, merge.revision)]!!
 					gitRepository.repository.writeMergeHeads(listOf(commitId))
 				}
 				val commit = gitRepository.commit()

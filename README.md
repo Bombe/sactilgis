@@ -99,6 +99,7 @@ Each branch has a number of features; a name, an optional origin, a list of revi
 <branch>
 	<name>main</name>
 	<origin>
+		<tag>test-3</tag>
 		<branch>test</branch>
 		<revision>3</revision>
 	</origin>
@@ -142,7 +143,12 @@ This sections needs to be repeated for every branch you want to transfer into a 
 
 #### The `origin` section
 
-This section is optional and should only used if your branches are created from outside of any branches you are processing. A common example for that would be branches created from tags; as tags usually do not belong to a branch, sactilgis can not assign them automatically. Instead, the `origin` section is used to point sactilgis to where the tag is actually coming from.
+This section is optional and should only be used if your branches are created from outside any branches you are processing. A common example for that would be branches created from tags; as tags in Subversion usually do not belong to a branch, sactilgis can not assign them automatically. Instead, the `origin` section is used to point sactilgis to where the tag is actually coming from.
+
+If the origin of a branch is a tag defined in the configuration, use the `tag` element. If the origin of a branch is not a tag but a branch that sactilgis cannot detect automatically (e.g. because it was created without copying an existing branch), use the `branch` and `revision` elements.
+
+tag
+: The name of the tag the branch was copied from. If this element is used, `branch` and `revision` will be ignored.
 
 branch
 : The name of the branch the tag was copied from.
