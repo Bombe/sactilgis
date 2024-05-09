@@ -21,4 +21,10 @@ class BranchDefinitionTest {
 		assertThat(branchDefinition.pathAt(2), nullValue())
 	}
 
+	@Test
+	fun `branch definition returns earliest revision for a path`() {
+		val branchDefinition = BranchDefinition(3L to "/main", 12L to "/trunk/main", 45L to "/trunk/other/main")
+		assertThat(branchDefinition.earliestRevision, equalTo(3L))
+	}
+
 }
