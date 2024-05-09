@@ -56,10 +56,12 @@ fun main(vararg arguments: String) {
 	val mergeRevisionsByBranch = configuration.branches.associate { it.name to it.merges.associateBy { it.revision } }
 	val tagRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.tags.associateBy { findActualRevision(branch.name, it.revision) } }
 	val fixRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.fixes.associateBy { it.revision } }
+	val branchOrigins = configuration.branches.associate { branch -> branch.name to branch.origin }
 
 	val worklist = Worklist(
 		repositoryInformation.brachRevisions,
-		repositoryInformation.branchCreationPoints.mapValues { entry -> findBranchByPathAndRevision(entry.value.first, entry.value.second) to entry.value.second },
+		repositoryInformation.branchCreationPoints.mapValues { entry -> findBranchByPathAndRevision(entry.value.first, entry.value.second) to entry.value.second } +
+				branchOrigins.filterValues { it != null }.mapValues { it.value!!.branch to it.value!!.revision },
 		mergeRevisionsByBranch.mapValues { it.value.mapValues { it.value.branch to it.value.revision } }
 	)
 
@@ -85,9 +87,11 @@ fun main(vararg arguments: String) {
 				if (gitRepository.branchDoesNotExist(branch)) {
 					print("(creating $branch)")
 					val originalRevision = repositoryInformation.branchCreationPoints[branch]?.second
-					if (originalRevision != null) {
+					val startPoint = originalRevision?.let { revisionCommits[it]!!.name }
+						?: branchOrigins[branch]?.let { revisionCommits[findActualRevision(it.branch, it.revision)]!!.name }
+					if (startPoint != null) {
 						printTime("create") {
-							gitRepository.checkout().setCreateBranch(true).setName(branch).setStartPoint(revisionCommits[originalRevision]!!.name).call()
+							gitRepository.checkout().setCreateBranch(true).setName(branch).setStartPoint(startPoint).call()
 						}
 					} else {
 						printTime("orphan") {

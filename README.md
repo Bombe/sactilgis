@@ -93,11 +93,15 @@ email
 
 This is finally where the meat of the configuration file lives. Here all the branches (including the main branch, often refered to as “trunk” in Subversion-land) that are a part of your project need to be defined, because it’s nigh impossible to generate this data from the information in the Subversion repository; mostly, because Subversion doesn’t know what a branch even _is_, and developers are incredibly skilled at working around restrictions in software and gaps in their knowledge while still appearing to know it all. 😄
 
-Each branch has a number of features; a name, a list of revision-dependent paths for locating commits belonging to it, merge commits, tags, and fixes.
+Each branch has a number of features; a name, an optional origin, a list of revision-dependent paths for locating commits belonging to it, merge commits, tags, and fixes.
 
 ```xml
 <branch>
 	<name>main</name>
+	<origin>
+		<branch>test</branch>
+		<revision>3</revision>
+	</origin>
 	<revision-paths>
 		<revision-path>
 			<revision>5</revision>
@@ -135,6 +139,16 @@ The first branch in your `branches` section needs to be the one in your reposito
 At the moment, the requirement that the first branch has to be named “main” is hard-coded.
 
 This sections needs to be repeated for every branch you want to transfer into a Git repository.
+
+#### The `origin` section
+
+This section is optional and should only used if your branches are created from outside of any branches you are processing. A common example for that would be branches created from tags; as tags usually do not belong to a branch, sactilgis can not assign them automatically. Instead, the `origin` section is used to point sactilgis to where the tag is actually coming from.
+
+branch
+: The name of the branch the tag was copied from.
+
+revision
+: The revision that was tagged.
 
 #### The `revision-paths` section
 

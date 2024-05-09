@@ -37,12 +37,19 @@ data class Configuration(
 	class Branch {
 
 		var name: String = ""
-
+		var origin: Origin? = null
 		@JsonProperty("revision-paths")
 		val revisionPaths: List<RevisionPath> = ArrayList()
 		val merges: List<Merge> = ArrayList()
 		val tags: List<Tag> = ArrayList()
 		val fixes: List<Fix> = ArrayList()
+
+		data class Origin(
+			@JsonProperty("branch")
+			var branch: String = "",
+			@JsonProperty("revision")
+			var revision: Long = 0,
+		)
 
 		class RevisionConverter : StdConverter<String?, Long?>() {
 
