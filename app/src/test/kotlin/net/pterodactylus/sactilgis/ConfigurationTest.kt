@@ -241,6 +241,7 @@ class ConfigurationTest {
 					name = "feature-2"
 					origin = Origin(tag = "tag-feature")
 					revisionPaths.add(RevisionPath().apply { revision = 8; path = "/branches/feature-2" })
+					merges.add(Merge().apply { revision = 9; tag = "tag-feature" })
 					fixes.add(Fix().apply { revision = 12; message = "New message" })
 				}
 			)
@@ -294,6 +295,20 @@ class ConfigurationTest {
 	}
 
 	@Test
+	fun `verify throws exception if merge tags with spaces are found`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+					merges.add(Merge().apply { revision = 1; tag = "wrong tag" })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
 	fun `verify throws exception if duplicate tags are defined`() {
 		val configuration = Configuration().apply {
 			branches += listOf(
@@ -321,6 +336,25 @@ class ConfigurationTest {
 					name = "second"
 					origin = Origin(tag = "wrong-tag")
 					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if merge tag does not exist`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+					tags.add(Tag().apply { name = "tag1"; revision = 2; messageRevision = 3 })
+				},
+				Branch().apply {
+					name = "second"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+					merges.add(Merge().apply { revision = 1;tag = "wrong-tag" })
 				}
 			)
 		}

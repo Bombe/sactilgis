@@ -77,7 +77,8 @@ data class Configuration(
 		class Merge {
 
 			var revision: Long = 0
-			var branch: String = ""
+			var branch: String? = null
+			var tag: String? = null
 
 		}
 
@@ -151,8 +152,11 @@ data class Configuration(
 		}
 
 		val allMerges = branches.flatMap(Branch::merges)
-		if (allMerges.any { it.branch !in allDefinedBranches }) {
-			throw IllegalStateException("Missing branch to merge found: ${allMerges.filter { it.branch !in allDefinedBranches }.map(Merge::branch)}")
+		if (allMerges.any { (it.branch != null) && (it.branch !in allDefinedBranches) }) {
+			throw IllegalStateException("Missing branch to merge found: ${allMerges.filter { (it.branch != null) && (it.branch !in allDefinedBranches) }.map(Merge::branch)}")
+		}
+		if (allMerges.any { (it.tag != null) && (it.tag !in allDefinedTags) }) {
+			throw IllegalStateException("Missing tag to merge found: ${allMerges.filter { (it.tag != null) && (it.tag !in allDefinedTags) }.map(Merge::tag)}")
 		}
 	}
 

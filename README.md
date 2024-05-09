@@ -176,11 +176,16 @@ Merges defined here will be shown as merges in Git but there will be no actual m
 
 The commit that will be chosen as the second parent of the commit is the latest revision that belongs to the specified branch.
 
+It is also possible to merge tags; only one of `branch` and `tag` should be specified.
+
 revision
 : The revision at which the branch should be recorded.
 
 branch
 : The branch that should be merged into this branch. Obviously, this branch needs to be defined in this configuration file as well.
+
+tag
+: The tag that should be merged into this branch.
 
 #### The `tags` section
 
