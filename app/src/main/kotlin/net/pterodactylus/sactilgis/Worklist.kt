@@ -7,6 +7,11 @@ class Worklist(private val branchRevisions: Map<String, SortedSet<Long>> = empty
 	fun createPlan(): List<Pair<String, Long>> {
 		val branchRevisionPool = branchRevisions.map { (key, value) -> key to value.toSortedSet() }.toMap().toMutableMap()
 		var lastBranch = ""
+		val orderedBranches = branchRevisions.keys.sorted().toMutableList()
+		branchCreationPoints.forEach { (_, branchRevision) ->
+			orderedBranches.remove(branchRevision.first)
+			orderedBranches.add(0, branchRevision.first)
+		}
 		return branchMergePoints
 			.flatMap { branchMergePoint ->
 				branchMergePoint.value.map { it.key to MergeInformation(branchMergePoint.key, it.value.first, it.value.second) }
@@ -37,13 +42,7 @@ class Worklist(private val branchRevisions: Map<String, SortedSet<Long>> = empty
 				revisionsToProcess
 			}
 			.plus(branchRevisionPool.flatMap { entry -> entry.value.map { entry.key to it } }.sortedWith { (leftBranch, leftRevision), (rightBranch, rightRevision) ->
-				if (branchCreationPoints[leftBranch]?.first == rightBranch) {
-					1
-				} else if (branchCreationPoints[rightBranch]?.first == leftBranch) {
-					-1
-				} else {
-					leftBranch.compareTo(rightBranch).takeIf { it != 0 } ?: leftRevision.compareTo(rightRevision)
-				}
+				orderedBranches.indexOf(leftBranch).compareTo(orderedBranches.indexOf(rightBranch)).takeIf { it != 0 } ?: leftRevision.compareTo(rightRevision)
 			})
 	}
 
