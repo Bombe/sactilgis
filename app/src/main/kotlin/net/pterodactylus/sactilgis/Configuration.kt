@@ -122,7 +122,7 @@ data class Configuration(
 	}
 
 	fun verify() {
-		branches.filter { " " in it.name }.onNotEmpty { throw IllegalStateException("Invalid branch names: $it") }
+		branches.filter { " " in it.name }.onNotEmpty { throw IllegalStateException("Invalid branch names: ${it.map(Branch::name)}") }
 		branches.filter { it.revisionPaths.isEmpty() }.onNotEmpty { throw IllegalStateException("Empty revision paths: $it") }
 
 		val allDefinedBranches = branches.map(Branch::name)
