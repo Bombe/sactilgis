@@ -48,9 +48,20 @@ fun main(vararg arguments: String) {
 	fun findActualRevision(branch: String, revision: Long) =
 		repositoryInformation.brachRevisions[branch]!!.headSet(revision + 1).last()
 
+	fun findBranchByPathAndRevision(path: String, revision: Long) =
+		branchDefinitions.entries.single { entry ->
+			(entry.value.pathAt(revision) == path) || entry.value.pathAt(revision)?.startsWith("$path/") ?: false
+		}.key
+
 	val mergeRevisionsByBranch = configuration.branches.associate { it.name to it.merges.associateBy { it.revision } }
 	val tagRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.tags.associateBy { findActualRevision(branch.name, it.revision) } }
 	val fixRevisionsByBranch = configuration.branches.associate { branch -> branch.name to branch.fixes.associateBy { it.revision } }
+
+	val worklist = Worklist(
+		repositoryInformation.brachRevisions,
+		repositoryInformation.branchCreationPoints.mapValues { entry -> findBranchByPathAndRevision(entry.value.first, entry.value.second) to entry.value.second },
+		mergeRevisionsByBranch.mapValues { it.value.mapValues { it.value.branch to it.value.revision } }
+	)
 
 	val workDirectory = File(configuration.general.targetDirectory ?: throw IllegalStateException("No target directory given."))
 	workDirectory.deleteRecursively()
@@ -67,7 +78,7 @@ fun main(vararg arguments: String) {
 		var currentPath = "/"
 		svnClientManager.updateClient.doCheckout(svnUrl, workDirectory, SVNRevision.create(1), SVNRevision.create(1), SVNDepth.EMPTY, false)
 
-		repositoryInformation.brachRevisions.flatMap { (key, value) -> value.map { it to key } }.sortedBy { it.first }.forEach { (revision, branch) ->
+		worklist.createPlan().forEach { (branch, revision) ->
 			print("${"%tT.%<tL".format(System.currentTimeMillis())} (@$revision)($branch)")
 			val svnRevision = SVNRevision.create(revision)
 			if (currentBranch != branch) {
