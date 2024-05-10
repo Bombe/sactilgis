@@ -158,6 +158,9 @@ data class Configuration(
 		if (allMerges.any { (it.tag != null) && (it.tag !in allDefinedTags) }) {
 			throw IllegalStateException("Missing tag to merge found: ${allMerges.filter { (it.tag != null) && (it.tag !in allDefinedTags) }.map(Merge::tag)}")
 		}
+		if (allMerges.any { it.revision == 0L }) {
+			throw IllegalStateException("Missing revision of merge found: ${allMerges.filter { it.revision == 0L }.map { "${it.tag}/${it.branch}" }}")
+		}
 	}
 
 }

@@ -397,6 +397,24 @@ class ConfigurationTest {
 	}
 
 	@Test
+	fun `verify throws exception if revision of merge is not set`() {
+		val configuration = Configuration().apply {
+			branches += listOf(
+				Branch().apply {
+					name = "first"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+				},
+				Branch().apply {
+					name = "second"
+					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
+					merges.add(Merge().apply { branch = "first" })
+				}
+			)
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
 	fun `verify throws exception if origin branch does not exist`() {
 		val configuration = Configuration().apply {
 			branches += listOf(
