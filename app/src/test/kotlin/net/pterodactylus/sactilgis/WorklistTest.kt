@@ -89,10 +89,10 @@ class WorklistTest {
 				"main" to 6L,
 				"second" to 5L,
 				"second" to 7L,
-				"second" to 10L,
-				"second" to 11L,
 				"main" to 8L,
 				"main" to 9L,
+				"second" to 10L,
+				"second" to 11L,
 				"second" to 12L,
 				"main" to 13L,
 				"main" to 14L,
@@ -145,59 +145,26 @@ class WorklistTest {
 		val plan = worklist.createPlan()
 		assertThat(
 			plan, contains(
-				// first merge at 8
 				"main" to 1L,
 				"main" to 2L,
 				"main" to 3L,
 				"main" to 4L,
 				"third" to 7L,
-
-				// merge at 9
 				"third" to 8L,
-
-				// merge at 10
 				"main" to 9L,
+				"main" to 13L,
 				"second" to 5L,
 				"second" to 6L,
-
-				// merge at 12
 				"second" to 10L,
-				"third" to 11L,
-
-				// merge at 14
-				"main" to 13L,
-
-				// merge at 15
-				"third" to 12L,
-
-				// merge at 16
-				"second" to 15L,
 				"main" to 14L,
-
-				// merge at 17
-
-				// merge at 18
+				"third" to 11L,
+				"third" to 12L,
 				"main" to 17L,
+				"second" to 15L,
 				"second" to 16L,
-
 				"main" to 18L,
 			)
 		)
-	}
-
-	@Test
-	fun `worklist lists orphan branches alphabetically after everything else`() {
-		val worklist = Worklist(
-			mapOf("main" to treeSetOf(1L, 2L, 3L), "third" to treeSetOf(4L, 6L, 8L), "first" to treeSetOf(5L, 9L, 10L), "second" to treeSetOf(7L, 11L)),
-			mapOf(),
-			mapOf(),
-		)
-		assertThat(worklist.createPlan(), contains(
-			"first" to 5L, "first" to 9L, "first" to 10L,
-			"main" to 1L, "main" to 2L, "main" to 3L,
-			"second" to 7L, "second" to 11L,
-			"third" to 4L, "third" to 6L, "third" to 8L
-		))
 	}
 
 	@Test
@@ -210,8 +177,8 @@ class WorklistTest {
 		assertThat(worklist.createPlan(), contains(
 			"main" to 1L, "main" to 2L, "main" to 3L,
 			"first" to 5L, "first" to 9L, "first" to 10L,
+			"third" to 4L, "third" to 6L, "third" to 8L,
 			"second" to 7L, "second" to 11L,
-			"third" to 4L, "third" to 6L, "third" to 8L
 		))
 	}
 

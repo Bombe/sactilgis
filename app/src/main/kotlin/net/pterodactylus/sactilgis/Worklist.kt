@@ -5,47 +5,81 @@ import java.util.SortedSet
 class Worklist(private val branchRevisions: Map<String, SortedSet<Long>> = emptyMap(), private val branchCreationPoints: Map<String, Pair<String, Long>> = emptyMap(), private val branchMergePoints: Map<String, Map<Long, Pair<String, Long>>> = emptyMap()) {
 
 	fun createPlan(): List<Pair<String, Long>> {
-		val branchRevisionPool = branchRevisions.map { (key, value) -> key to value.toSortedSet() }.toMap().toMutableMap()
+		val nodes = mutableMapOf<Long, MutableList<Long>>()
 		var lastBranch = ""
-		val orderedBranches = branchRevisions.keys.sorted().toMutableList()
-		branchCreationPoints.forEach { (_, branchRevision) ->
-			orderedBranches.remove(branchRevision.first)
-			orderedBranches.add(0, branchRevision.first)
+		var lastRevision = -1L
+		branchRevisions.flatMap { branchRevision -> branchRevision.value.map { branchRevision.key to it } }.forEach { (branch, revision) ->
+			if (lastBranch != branch) {
+				nodes[revision] = mutableListOf()
+				lastBranch = branch
+			} else {
+				nodes.getOrPut(revision) { mutableListOf() } += lastRevision
+			}
+			lastRevision = revision
 		}
-		return branchMergePoints
-			.flatMap { branchMergePoint ->
-				branchMergePoint.value.map { it.key to MergeInformation(branchMergePoint.key, it.value.first, it.value.second) }
+		branchCreationPoints.forEach { newBranch, (oldBranch, revision) ->
+			val firstRevisionOfNewBranch = branchRevisions[newBranch]!!.first()
+			val actualRevisionInOldBranch = branchRevisions[oldBranch]!!.headSet(revision + 1).last()
+			nodes.getOrPut(firstRevisionOfNewBranch) { mutableListOf() } += actualRevisionInOldBranch
+		}
+		branchMergePoints.forEach { (targetBranch, merges) ->
+			merges.forEach { mergeRevision, (branchToMerge, revisionToMerge) ->
+				val actualRevisionInBranchToMerge = branchRevisions[branchToMerge]!!.headSet(revisionToMerge + 1).last()
+				nodes.getOrPut(mergeRevision) { mutableListOf() } += actualRevisionInBranchToMerge
 			}
-			.sortedBy { it.first }
-			.flatMap { (revision, mergeInformation) ->
-				val revisionsToProcess = mutableListOf<Pair<String, Long>>()
-				branchCreationPoints[mergeInformation.targetBranch]?.let { targetBranchCreationPoint ->
-					if (targetBranchCreationPoint.second in branchRevisionPool[targetBranchCreationPoint.first]!!) {
-						revisionsToProcess += branchRevisionPool[targetBranchCreationPoint.first]!!.headSet(targetBranchCreationPoint.second + 1).map { targetBranchCreationPoint.first to it }
-						branchRevisionPool[targetBranchCreationPoint.first]!! -= revisionsToProcess.map(Pair<*, Long>::second)
-						lastBranch = targetBranchCreationPoint.first
-					}
-				}
-				val revisionsFromTargetBranch = branchRevisionPool[mergeInformation.targetBranch]!!.headSet(revision).toSortedSet()
-				val revisionsFromSourceBranch = branchRevisionPool[mergeInformation.sourceBranch]!!.headSet(revision + 1).toSortedSet()
-				branchRevisionPool[mergeInformation.targetBranch]!! -= revisionsFromTargetBranch
-				branchRevisionPool[mergeInformation.sourceBranch]!! -= revisionsFromSourceBranch
-				if (lastBranch == mergeInformation.sourceBranch) {
-					revisionsToProcess += revisionsFromSourceBranch.map { mergeInformation.sourceBranch to it }
-					revisionsToProcess += revisionsFromTargetBranch.map { mergeInformation.targetBranch to it }
-					lastBranch = mergeInformation.targetBranch
-				} else {
-					revisionsToProcess += revisionsFromTargetBranch.map { mergeInformation.targetBranch to it }
-					revisionsToProcess += revisionsFromSourceBranch.map { mergeInformation.sourceBranch to it }
-					lastBranch = mergeInformation.sourceBranch
-				}
-				revisionsToProcess
+		}
+		return findDisconnectedGraphs(nodes)
+			.map(depthFirstSort(nodes))
+			.flatten()
+			.map { revision -> findBranchForRevision(revision) to revision }
+	}
+
+	// shamelessly taken from https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
+	private fun depthFirstSort(nodes: MutableMap<Long, MutableList<Long>>) = { graph: Set<Long> ->
+		val permanentMarks = mutableSetOf<Long>()
+		val temporaryMarks = mutableSetOf<Long>()
+		val sortedNodes = mutableListOf<Long>()
+
+		fun visit(node: Long) {
+			if (node in permanentMarks) {
+				return
 			}
-			.plus(branchRevisionPool.flatMap { entry -> entry.value.map { entry.key to it } }.sortedWith { (leftBranch, leftRevision), (rightBranch, rightRevision) ->
-				orderedBranches.indexOf(leftBranch).compareTo(orderedBranches.indexOf(rightBranch)).takeIf { it != 0 } ?: leftRevision.compareTo(rightRevision)
-			})
+			if (node in temporaryMarks) {
+				throw IllegalStateException("Cycle detected for $node")
+			}
+
+			temporaryMarks += node
+			nodes[node]!!.forEach(::visit)
+			temporaryMarks -= node
+
+			permanentMarks += node
+			sortedNodes.add(node)
+		}
+
+		while ((graph - permanentMarks).isNotEmpty()) {
+			(graph - permanentMarks).first().let(::visit)
+		}
+
+		sortedNodes
+	}
+
+	private fun findBranchForRevision(revision: Long) = branchRevisions.entries.first { revision in it.value }.key
+
+	private fun findDisconnectedGraphs(nodes: Map<Long, List<Long>>): Collection<Set<Long>> {
+		val graphs = mutableMapOf<Long, MutableSet<Long>>()
+		nodes.forEach { (parent, children) ->
+			var graph = mutableSetOf<Long>()
+			children.forEach { child ->
+				if (child in graphs) {
+					graph = graphs[child]!!
+				}
+				graph += child
+				graphs[child] = graph
+			}
+			graph += parent
+			graphs[parent] = graph
+		}
+		return graphs.values.distinct()
 	}
 
 }
-
-data class MergeInformation(val targetBranch: String, val sourceBranch: String, val sourceRevision: Long)
