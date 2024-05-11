@@ -90,6 +90,7 @@ fun main(vararg arguments: String) {
 		var currentPath = "/"
 		svnClientManager.updateClient.doCheckout(svnUrl, workDirectory, SVNRevision.create(1), SVNRevision.create(1), SVNDepth.EMPTY, false)
 
+		var processedRevisionCount = 0
 		worklist.createPlan().forEach { (branch, revision) ->
 			print("${"%tT.%<tL".format(System.currentTimeMillis())} (@$revision)($branch)")
 			val svnRevision = SVNRevision.create(revision)
@@ -178,6 +179,12 @@ fun main(vararg arguments: String) {
 						.setMessage(tagLogEntry.message)
 						.setTagger(PersonIdent(committer ?: committers.getValue(tagLogEntry.author), tagLogEntry.date))
 						.setAnnotated(true).setSigned(configuration.general.signCommits == true).call()
+				}
+			}
+			processedRevisionCount++
+			if (processedRevisionCount.rem(100) == 0) {
+				printTime("gc") {
+					gitRepository.gc().call()
 				}
 			}
 			println()
