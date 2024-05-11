@@ -1,6 +1,7 @@
 package net.pterodactylus.sactilgis
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.sun.jna.Platform
 import net.pterodactylus.sactilgis.Configuration.Branch
 import net.pterodactylus.utils.svn.BranchDefinition
 import net.pterodactylus.utils.svn.RepositoryScanner
@@ -80,7 +81,7 @@ fun main(vararg arguments: String) {
 	workDirectory.mkdirs()
 	Git.init().setBare(false).setDirectory(workDirectory).setInitialBranch("main").call().use { gitRepository ->
 		if (configuration.general.ignoreGlobalGitIgnoreFile != false) {
-			gitRepository.repository.config.setString("core", null, "excludesFile", "<none>")
+			gitRepository.repository.config.setString("core", null, "excludesFile", if (Platform.isWindows()) "NUL:" else "/dev/null")
 		}
 		val simpleSvn = SimpleSVN(svnRepository)
 		val svnClientManager = SVNClientManager.newInstance()
