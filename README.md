@@ -147,6 +147,8 @@ This section is optional and should only be used if your branches are created fr
 
 If the origin of a branch is a tag defined in the configuration, use the `tag` element. If the origin of a branch is not a tag but a branch that sactilgis cannot detect automatically (e.g. because it was created without copying an existing branch), use the `branch` and `revision` elements.
 
+If no origin is specified and no origin can be determined, sactilgis will create an orphan branch.
+
 tag
 : The name of the tag the branch was copied from. If this element is used, `branch` and `revision` will be ignored.
 
