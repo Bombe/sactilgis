@@ -28,14 +28,12 @@ class Worklist(private val branchRevisions: Map<String, SortedSet<Long>> = empty
 				nodes.getOrPut(mergeRevision) { mutableListOf() } += actualRevisionInBranchToMerge
 			}
 		}
-		return findDisconnectedGraphs(nodes)
-			.map(depthFirstSort(nodes))
-			.flatten()
+		return depthFirstSort(branchRevisions.values.flatten().toSet(), nodes)
 			.map { revision -> findBranchForRevision(revision) to revision }
 	}
 
 	// shamelessly taken from https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
-	private fun depthFirstSort(nodes: MutableMap<Long, MutableList<Long>>) = { graph: Set<Long> ->
+	private fun depthFirstSort(graph: Set<Long>, nodes: MutableMap<Long, MutableList<Long>>): List<Long> {
 		val permanentMarks = mutableSetOf<Long>()
 		val temporaryMarks = mutableSetOf<Long>()
 		val sortedNodes = mutableListOf<Long>()
@@ -56,30 +54,13 @@ class Worklist(private val branchRevisions: Map<String, SortedSet<Long>> = empty
 			sortedNodes.add(node)
 		}
 
-		while ((graph - permanentMarks).isNotEmpty()) {
-			(graph - permanentMarks).first().let(::visit)
+		while (sortedNodes.size < nodes.keys.size) {
+			(nodes.keys - sortedNodes).first().let(::visit)
 		}
 
-		sortedNodes
+		return sortedNodes
 	}
 
 	private fun findBranchForRevision(revision: Long) = branchRevisions.entries.first { revision in it.value }.key
-
-	private fun findDisconnectedGraphs(nodes: Map<Long, List<Long>>): Collection<Set<Long>> {
-		val graphs = mutableMapOf<Long, MutableSet<Long>>()
-		nodes.forEach { (parent, children) ->
-			var graph = mutableSetOf<Long>()
-			children.forEach { child ->
-				if (child in graphs) {
-					graph = graphs[child]!!
-				}
-				graph += child
-				graphs[child] = graph
-			}
-			graph += parent
-			graphs[parent] = graph
-		}
-		return graphs.values.distinct()
-	}
 
 }

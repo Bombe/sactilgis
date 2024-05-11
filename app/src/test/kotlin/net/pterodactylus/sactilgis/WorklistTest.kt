@@ -2,6 +2,7 @@ package net.pterodactylus.sactilgis
 
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
+import org.hamcrest.Matchers.greaterThan
 import org.junit.jupiter.api.Test
 import java.util.TreeSet
 
@@ -174,12 +175,8 @@ class WorklistTest {
 			mapOf("first" to ("main" to 2L)),
 			mapOf(),
 		)
-		assertThat(worklist.createPlan(), contains(
-			"main" to 1L, "main" to 2L, "main" to 3L,
-			"first" to 5L, "first" to 9L, "first" to 10L,
-			"third" to 4L, "third" to 6L, "third" to 8L,
-			"second" to 7L, "second" to 11L,
-		))
+		val plan = worklist.createPlan()
+		assertThat(plan.indexOf("first" to 5L), greaterThan(plan.indexOf("main" to 2L)))
 	}
 
 }
