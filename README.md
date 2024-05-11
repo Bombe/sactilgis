@@ -172,7 +172,7 @@ path
 
 #### The `merges` section
 
-A merge defines a point where two branches are joined. This information cannot reliably be pulled from Subversion’s `svn:mergeinfo` property, because the property can be set on nested branches somewhere, or the mergeinfo property only contains a handful of commits from the merged branch. Git cannot handle selective merges like that, so here *you* have to decide if a commit in Subversion should be treated like a merge in Git, i.e. unifying two lines of development.
+A merge defines a point where two branches are joined. This information cannot reliably be pulled from Subversion’s `svn:mergeinfo` property, because the property can be set on nested directories somewhere, or the mergeinfo property only contains a handful of commits from the merged branch. Git cannot handle selective merges like that, so here *you* have to decide if a commit in Subversion should be treated like a merge in Git, i.e. unifying two lines of development.
 
 Merges defined here will be shown as merges in Git but there will be no actual merging performed at any time. The contents of the repository at the resulting commit will be exactly like the content of the Subversion repository at the given revision; the commit in Git, however, will have two parents.
 
