@@ -121,8 +121,8 @@ Each branch has a number of features; a name, an optional origin, a list of revi
 	</merges>
 	<tags>
 		<tag>
-			<revision>318</revision>
 			<name>0.4</name>
+			<revision>318</revision>
 			<message-revision>325</message-revision>
 		</tag>
 	</tags>
@@ -191,11 +191,11 @@ tag
 
 Tags are markers for certain commits, most often used for released versions. But, just like Subversion doesn’t know what a branch is, it also doesn’t know what a tag is; Subversion just sees directories in a sea of directories. So once again, your help is required!
 
-revision
-: The revision of this branch that should be tagged. The actual revision the tag will be made of may actually be lower than this; if the Subversion commit (e.g. on your `/tags` branch) refers to revision 10 but the last commit on this branch was actually 7, revision 7 will be tagged.
-
 name
 : The name of the tag. Tag names need to be unique in a repository.
+
+revision
+: The revision of this branch that should be tagged. The actual revision the tag will be made of may actually be lower than this; if the Subversion commit (e.g. on your `/tags` branch) refers to revision 10 but the last commit on this branch was actually 7, revision 7 will be tagged.
 
 message-revision
 : The revision that the message of the Git tag should be taken from.
