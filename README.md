@@ -204,7 +204,7 @@ message-revision
 
 #### The `fixes` section
 
-If you live a country that does not have US-ASCII-compatible national language, you may encounter problems with those pesky accented or otherwise multi-byted characters. This section allows you to replace messages that have not been converted correctly.
+If you live a country that does not have a US-ASCII-compatible national language, you may encounter problems with those pesky accented or otherwise multi-byted characters. This section allows you to replace messages that have not been converted correctly.
 
 revision
 : The revision to fix.
@@ -214,7 +214,7 @@ message
 
 ## Merging Configurations
 
-In order to be able to e.g. define a common mapping for committers (because in a corporate environment you have many repositories but they are all being worked on by the same people) it is possible to specify multiple XML files on the command line. In general, the values from later files are used to override values from earlier files. The following exceptions apply:
+In order to be able to e.g. define a common mapping for committers (because in a corporate environment you have many repositories, but they are all being worked on by the same people) it is possible to specify multiple XML files on the command line. In general, the values from later files are used to override values from earlier files. The following exceptions apply:
 
 1. Non-present tags in the `general` sections remain unchanged.
 2. The `committer` and the `subversion-auth` value in the `general` section can only be overridden in total, i.e. it is not possible to only change the name of the committer, or the password for the authentication.
