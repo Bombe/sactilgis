@@ -16,6 +16,7 @@ class RepositoryScanner(private val svnRepository: SVNRepository) {
 		val latestRevision = svnRepository.latestRevision
 
 		LongRange(1, latestRevision).forEach { revision ->
+			print("(@$revision)\r")
 			val logEntry = simpleSvn.getLogEntry("/", revision)!!
 			logEntry
 				.changedPaths.keys
@@ -38,6 +39,7 @@ class RepositoryScanner(private val svnRepository: SVNRepository) {
 					}
 				}
 		}
+		print("\u000b")
 
 		return RepositoryInformation(latestRevision, branchRevisions, branchCreationPoints)
 	}
