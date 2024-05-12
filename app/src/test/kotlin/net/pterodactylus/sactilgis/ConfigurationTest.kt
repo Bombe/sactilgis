@@ -258,6 +258,14 @@ class ConfigurationTest {
 	}
 
 	@Test
+	fun `verify throws exception if branch name opening square brackets`() {
+		val configuration = Configuration().apply {
+			branches += listOf(Branch().apply { name = "other[branch]"; revisionPaths += RevisionPath() })
+		}
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
 	fun `verify throws exception if branch has no revision paths`() {
 		val configuration = Configuration().apply {
 			branches += listOf(Branch().apply { name = "branch" })
