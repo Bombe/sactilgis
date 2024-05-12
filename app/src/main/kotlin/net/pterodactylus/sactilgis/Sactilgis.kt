@@ -97,7 +97,6 @@ fun main(vararg arguments: String) {
 			val svnRevision = SVNRevision.create(revision)
 			if (currentBranch != branch) {
 				if (gitRepository.branchDoesNotExist(branch)) {
-					print("(creating $branch)")
 					val originalRevision = repositoryInformation.branchCreationPoints[branch]?.second
 					val startPoint = originalRevision
 						?: branchOrigins[branch]?.tag?.let(::findActualRevision)
@@ -112,7 +111,6 @@ fun main(vararg arguments: String) {
 						}
 					}
 				} else {
-					print("(switching to $branch)")
 					printTime("checkout") {
 						gitRepository.checkout().setName(branch).call()
 					}
@@ -168,12 +166,10 @@ fun main(vararg arguments: String) {
 					.setSign(configuration.general.signCommits == true)
 					.call()
 				revisionCommits[revision] = commit
-				print("(${commit.id.name})")
 			}
 			tagRevisionsByBranch[branch]!![revision]?.let { tag ->
-				print("(tagging ${tag.name})")
 				val tagLogEntry = simpleSvn.getLogEntry("/", tag.messageRevision)!!
-				printTime("tag") {
+				printTime("tag ${tag.name}") {
 					gitRepository.tag()
 						.setObjectId(revisionCommits[revision])
 						.setName(tag.name)
