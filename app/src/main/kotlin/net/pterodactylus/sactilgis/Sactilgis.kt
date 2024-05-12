@@ -81,7 +81,7 @@ fun main(vararg arguments: String) {
 	workDirectory.mkdirs()
 	Git.init().setBare(false).setDirectory(workDirectory).setInitialBranch("main").call().use { gitRepository ->
 		if (configuration.general.ignoreGlobalGitIgnoreFile != false) {
-			gitRepository.repository.config.setString("core", null, "excludesFile", if (Platform.isWindows()) "NUL:" else "/dev/null")
+			gitRepository.repository.config.setString("core", null, "excludesFile", if (Platform.isWindows()) "NUL" else "/dev/null")
 		}
 		val simpleSvn = SimpleSVN(svnRepository)
 		val svnClientManager = SVNClientManager.newInstance()
