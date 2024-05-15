@@ -122,7 +122,7 @@ data class Configuration(
 	}
 
 	fun verify() {
-		branches.filter { branch -> setOf(" ", "[").any { it in branch.name } }.onNotEmpty { throw IllegalStateException("Invalid branch names: ${it.map(Branch::name)}") }
+		branches.filter { isInvalidRefName(it.name) }.onNotEmpty { throw IllegalStateException("Invalid branch names: ${it.map(Branch::name)}") }
 		branches.filter { it.revisionPaths.isEmpty() }.onNotEmpty { throw IllegalStateException("Empty revision paths: $it") }
 
 		val allDefinedBranches = branches.map(Branch::name)
@@ -134,14 +134,9 @@ data class Configuration(
 		if (allDefinedTags.size != allDefinedTags.distinct().size) {
 			throw IllegalStateException("Duplicate tags found: ${allDefinedTags.groupBy { it }.filterValues { it.size > 1 }.keys}")
 		}
-		if (allDefinedTags.any { " " in it }) {
-			throw IllegalStateException("Invalid tag found: ${allDefinedTags.filter { " " in it }}")
-		}
+		allDefinedTags.filter(::isInvalidRefName).onNotEmpty { throw IllegalStateException("Invalid tag names: ${it}") }
 
 		val allOriginTags = branches.mapNotNull(Branch::origin).mapNotNull(Origin::tag)
-		if (allOriginTags.any { " " in it }) {
-			throw IllegalStateException("Invalid origin tag found: ${allOriginTags.filter { " " in it }}")
-		}
 		if (!allDefinedTags.containsAll(allOriginTags)) {
 			throw IllegalStateException("Missing origin tag found: ${allOriginTags - allDefinedTags}")
 		}
@@ -170,3 +165,13 @@ private fun <T> Collection<T>.onNotEmpty(action: (Collection<T>) -> Unit) = run 
 		action(this)
 	}
 }
+
+private fun isInvalidRefName(ref: String) =
+	ref.split("/").any { it.startsWith(".") || it.endsWith(".lock") } ||
+			ref.contains("..") ||
+			ref.any { it in setOf(' ', '~', '^', ':', '?', '*', '[') || (it < ' ') || (it == '\u007f') } ||
+			ref.startsWith("/") || ref.endsWith("/") || "//" in ref ||
+			ref.endsWith(".") ||
+			"@{" in ref ||
+			ref == "@" ||
+			"\\" in ref

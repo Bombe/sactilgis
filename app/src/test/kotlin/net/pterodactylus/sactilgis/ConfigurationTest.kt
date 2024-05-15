@@ -251,19 +251,110 @@ class ConfigurationTest {
 
 	@Test
 	fun `verify throws exception if branch name contains space`() {
-		val configuration = Configuration().apply {
-			branches += listOf(Branch().apply { name = "other branch" })
-		}
+		val configuration = createConfigurationWithBranch("other branch]")
 		assertThrows<IllegalStateException>(configuration::verify)
 	}
 
 	@Test
 	fun `verify throws exception if branch name opening square brackets`() {
-		val configuration = Configuration().apply {
-			branches += listOf(Branch().apply { name = "other[branch]"; revisionPaths += RevisionPath() })
-		}
+		val configuration = createConfigurationWithBranch("other[branch]")
 		assertThrows<IllegalStateException>(configuration::verify)
 	}
+
+	@Test
+	fun `verify throws exception if branch name begins with a slash`() {
+		val configuration = createConfigurationWithBranch("/otherbranch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name ends with a slash`() {
+		val configuration = createConfigurationWithBranch("otherbranch/")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains two consecutive slashes`() {
+		val configuration = createConfigurationWithBranch("other//branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name slash-separated part begins with a dot`() {
+		val configuration = createConfigurationWithBranch("other/.branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name ends with a dot`() {
+		val configuration = createConfigurationWithBranch("other.branch.")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name slash-separated part ends with a dot lock`() {
+		val configuration = createConfigurationWithBranch("other.lock/branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains two consecutive dots`() {
+		val configuration = createConfigurationWithBranch("other..branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains tilde`() {
+		val configuration = createConfigurationWithBranch("other~branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains caret`() {
+		val configuration = createConfigurationWithBranch("other^branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains colon`() {
+		val configuration = createConfigurationWithBranch("other:branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains question mark`() {
+		val configuration = createConfigurationWithBranch("other?branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains asterisk`() {
+		val configuration = createConfigurationWithBranch("other*branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains at sign followed by opening brace`() {
+		val configuration = createConfigurationWithBranch("other@{branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name is at sign`() {
+		val configuration = createConfigurationWithBranch("@")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if branch name contains a backslash`() {
+		val configuration = createConfigurationWithBranch("other\\branch")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	private fun createConfigurationWithBranch(name: String) =
+		Configuration().apply {
+			branches += listOf(Branch().apply { this.name = name; revisionPaths += RevisionPath() })
+		}
 
 	@Test
 	fun `verify throws exception if branch has no revision paths`() {
@@ -276,17 +367,116 @@ class ConfigurationTest {
 	@Test
 	fun `verify throws exception if tags with spaces are found`() {
 		// actually, Git disallows a bunch of things in ref names; check man git-check-ref-format for details.
-		val configuration = Configuration().apply {
+		val configuration = createConfigurationWithTag("tag 1")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains opening square brackets`() {
+		val configuration = createConfigurationWithTag("other[tag]")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name begins with a slash`() {
+		val configuration = createConfigurationWithTag("/othertag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name ends with a slash`() {
+		val configuration = createConfigurationWithTag("othertag/")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains two consecutive slashes`() {
+		val configuration = createConfigurationWithTag("other//tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name slash-separated part begins with a dot`() {
+		val configuration = createConfigurationWithTag("other/.tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name ends with a dot`() {
+		val configuration = createConfigurationWithBranch("other.tag.")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name slash-separated part ends with a dot lock`() {
+		val configuration = createConfigurationWithTag("other.lock/tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains two consecutive dots`() {
+		val configuration = createConfigurationWithTag("other..tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains tilde`() {
+		val configuration = createConfigurationWithTag("other~tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains caret`() {
+		val configuration = createConfigurationWithTag("other^tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains colon`() {
+		val configuration = createConfigurationWithTag("other:tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains question mark`() {
+		val configuration = createConfigurationWithTag("other?tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains asterisk`() {
+		val configuration = createConfigurationWithTag("other*tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains at sign followed by opening brace`() {
+		val configuration = createConfigurationWithTag("other@{tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name is at sign`() {
+		val configuration = createConfigurationWithTag("@")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	@Test
+	fun `verify throws exception if tag name contains a backslash`() {
+		val configuration = createConfigurationWithTag("other\\tag")
+		assertThrows<IllegalStateException>(configuration::verify)
+	}
+
+	private fun createConfigurationWithTag(tag: String) =
+		Configuration().apply {
 			branches += listOf(
 				Branch().apply {
 					name = "first"
 					revisionPaths.add(RevisionPath().apply { revision = 1; path = "/" })
-					tags.add(Tag().apply { name = "tag 1"; revision = 2; messageRevision = 3 })
+					tags.add(Tag().apply { name = tag; revision = 2; messageRevision = 3 })
 				}
 			)
 		}
-		assertThrows<IllegalStateException>(configuration::verify)
-	}
 
 	@Test
 	fun `verify throws exception if origin tags with spaces are found`() {
