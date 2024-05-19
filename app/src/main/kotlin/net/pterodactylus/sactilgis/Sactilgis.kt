@@ -144,6 +144,15 @@ fun main(vararg arguments: String) {
 					svnClientManager.updateClient.doUpdate(workDirectory, svnRevision, SVNDepth.INFINITY, false, true)
 				}
 			}
+			printTime("verify") {
+				val statusLogs = mutableListOf<SVNStatus>()
+				svnClientManager.statusClient.doStatus(workDirectory, svnRevision, SVNDepth.INFINITY, false, true, false, false, statusLogs::add, null)
+				statusLogs
+					.filterNot { it.file == File(workDirectory, ".git") }
+					.filterNot { it.contentsStatus == STATUS_NORMAL }
+					.map(SVNStatus::getFile)
+					.also { filesToDelete -> filesToDelete.takeIf { it.isNotEmpty() }?.let { logger.info("Files that are different: $it") } }
+			}
 			val filePatterns = printTime("status") {
 				gitRepository.status().call().let { status ->
 					status.added + status.changed + status.modified + status.missing + status.removed + status.untracked + status.untrackedFolders + status.ignoredNotInIndex
