@@ -19,6 +19,7 @@ import org.tmatesoft.svn.core.wc.SVNRevision
 import org.tmatesoft.svn.core.wc.SVNStatus
 import org.tmatesoft.svn.core.wc.SVNStatusType.STATUS_NORMAL
 import java.io.File
+import java.util.concurrent.TimeUnit
 import java.util.logging.FileHandler
 import java.util.logging.Logger
 import java.util.logging.SimpleFormatter
@@ -97,11 +98,13 @@ fun main(vararg arguments: String) {
 
 		var processedRevisionCount = 0
 		val plan = worklist.createPlan().also { logger.info("Plan: $it") }
+		val startTime = System.currentTimeMillis()
 		plan.forEachIndexed { index, (branch, revision) ->
 			logger.info("Processing $branch at Revision $revision")
 			print("${"%tT.%<tL".format(System.currentTimeMillis())} ")
 			print("(@$revision)")
 			print("(${"%.1f".format(100.0 * index / (plan.size - 1))}%)")
+			print("(eta: ${(System.currentTimeMillis() - startTime).let { elapsedTime -> ((elapsedTime / ((index + 1.0) / plan.size)) - elapsedTime).toLong().toDurationString() }})")
 			print("($branch)")
 			val svnRevision = SVNRevision.create(revision)
 			if (currentBranch != branch) {
@@ -207,6 +210,13 @@ fun main(vararg arguments: String) {
 		}
 	}
 }
+
+private fun Long.toDurationString() = listOf(TimeUnit.DAYS to Int.MAX_VALUE, TimeUnit.HOURS to 24, TimeUnit.MINUTES to 60, TimeUnit.SECONDS to 60)
+	.map { (this / it.first.toMillis(1)) % it.second }
+	.dropWhile { it == 0L }
+	.ifEmpty { listOf(0L) }
+	.let { if (it.size < 2) (listOf(0L) + it) else it }
+	.joinToString(separator = ":") { "%02d".format(it) }
 
 private fun String.replaceLineBreaks() = replace(Regex("\\\\n"), "\n")
 
