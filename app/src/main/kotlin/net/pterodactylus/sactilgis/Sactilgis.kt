@@ -96,9 +96,13 @@ fun main(vararg arguments: String) {
 		svnClientManager.updateClient.doCheckout(svnUrl, workDirectory, SVNRevision.create(1), SVNRevision.create(1), SVNDepth.EMPTY, false)
 
 		var processedRevisionCount = 0
-		worklist.createPlan().also { logger.info("Plan: $it") }.forEach { (branch, revision) ->
+		val plan = worklist.createPlan().also { logger.info("Plan: $it") }
+		plan.forEachIndexed { index, (branch, revision) ->
 			logger.info("Processing $branch at Revision $revision")
-			print("${"%tT.%<tL".format(System.currentTimeMillis())} (@$revision)($branch)")
+			print("${"%tT.%<tL".format(System.currentTimeMillis())} ")
+			print("(@$revision)")
+			print("(${"%.1f".format(100.0 * index / (plan.size - 1))}%)")
+			print("($branch)")
 			val svnRevision = SVNRevision.create(revision)
 			if (currentBranch != branch) {
 				if (gitRepository.branchDoesNotExist(branch)) {
