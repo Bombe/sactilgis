@@ -128,16 +128,7 @@ fun main(vararg arguments: String) {
 					}
 				}
 				currentBranch = branch
-				printTime("clean") {
-					val statusLogs = mutableListOf<SVNStatus>()
-					svnClientManager.statusClient.doStatus(workDirectory, svnRevision, SVNDepth.INFINITY, false, true, false, false, statusLogs::add, null)
-					statusLogs
-						.filterNot { it.file == File(workDirectory, ".git") }
-						.filterNot { it.contentsStatus == STATUS_NORMAL }
-						.map(SVNStatus::getFile)
-						.also { filesToDelete -> logger.info("Files to clean up: $filesToDelete") }
-						.forEach(File::deleteRecursively)
-				}
+				revert(svnClientManager, workDirectory, svnRevision)
 			}
 			val path = branchDefinitions[branch]!!.pathAt(revision)!!
 			print("($path)")
@@ -146,19 +137,11 @@ fun main(vararg arguments: String) {
 				printTime("switch") {
 					svnClientManager.updateClient.doSwitch(workDirectory, svnUrl.appendPath(path, false), svnRevision, svnRevision, SVNDepth.INFINITY, false, true)
 				}
+				revert(svnClientManager, workDirectory, svnRevision)
 			} else {
 				printTime("update") {
 					svnClientManager.updateClient.doUpdate(workDirectory, svnRevision, SVNDepth.INFINITY, false, true)
 				}
-			}
-			printTime("verify") {
-				val statusLogs = mutableListOf<SVNStatus>()
-				svnClientManager.statusClient.doStatus(workDirectory, svnRevision, SVNDepth.INFINITY, false, true, false, false, statusLogs::add, null)
-				statusLogs
-					.filterNot { it.file == File(workDirectory, ".git") }
-					.filterNot { it.contentsStatus == STATUS_NORMAL }
-					.map(SVNStatus::getFile)
-					.also { filesToDelete -> filesToDelete.takeIf { it.isNotEmpty() }?.let { logger.info("Files that are different: $it") } }
 			}
 			val filePatterns = printTime("status") {
 				gitRepository.status().call().let { status ->
@@ -208,6 +191,19 @@ fun main(vararg arguments: String) {
 			}
 			println()
 		}
+	}
+}
+
+private fun revert(svnClientManager: SVNClientManager, workDirectory: File, svnRevision: SVNRevision) {
+	printTime("revert") {
+		val statusLogs = mutableListOf<SVNStatus>()
+		svnClientManager.statusClient.doStatus(workDirectory, svnRevision, SVNDepth.INFINITY, false, true, false, false, statusLogs::add, null)
+		statusLogs
+			.filterNot { it.file == File(workDirectory, ".git") }
+			.filter { it.isConflicted || (it.treeConflict != null) || (it.contentsStatus != STATUS_NORMAL) || (it.nodeStatus != STATUS_NORMAL) }
+			.map(SVNStatus::getFile)
+			.onEach(File::deleteRecursively)
+		svnClientManager.wcClient.doRevert(arrayOf(workDirectory), SVNDepth.INFINITY, null)
 	}
 }
 
