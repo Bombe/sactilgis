@@ -142,6 +142,29 @@ class RepositoryScannerTest {
 	}
 
 	@Test
+	fun `revision touching multiple projects is correctly split`() {
+		simpleSvn.createCommit("testuser", "create directory") { commit ->
+			commit.addDirectory("/project1")
+		}
+		simpleSvn.createCommit("testuser", "create directory") { commit ->
+			commit.addDirectory("/project2")
+		}
+		simpleSvn.createCommit("testuser", "create directory") { commit ->
+			commit.addFile("/project1/readme", "test1".byteInputStream())
+			commit.addFile("/project2/readme", "test2".byteInputStream())
+		}
+		repositoryScanner.addBranch("p1", BranchDefinition(1L to "/project1"))
+		repositoryScanner.addBranch("p2", BranchDefinition(2L to "/project2"))
+		val repositoryInformation = repositoryScanner.identifyBranches()
+		assertThat(
+			repositoryInformation.brachRevisions, allOf(
+				hasEntry(equalTo("p1"), contains(1L, 3L)),
+				hasEntry(equalTo("p2"), contains(2L, 3L))
+			)
+		)
+	}
+
+	@Test
 	fun `branches created from outside any existing definitions are still valid`() {
 		createTwoSimpleRepositories()
 		simpleSvn.createCommit("testuser", "create project") { commit ->
