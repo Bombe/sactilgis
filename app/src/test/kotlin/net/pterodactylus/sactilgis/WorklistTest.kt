@@ -179,6 +179,23 @@ class WorklistTest {
 		assertThat(plan.indexOf("first" to 5L), greaterThan(plan.indexOf("main" to 2L)))
 	}
 
+	@Test
+	fun `worklist for revisions existing on multiple branches lists revisions multiple times`() {
+		val worklist = Worklist(
+			mapOf("main" to treeSetOf(1L, 2L, 3L), "second" to treeSetOf(2L, 4L)),
+			mapOf(),
+			mapOf()
+		)
+		val plan = worklist.createPlan()
+		assertThat(plan, contains(
+			"main" to 1L,
+			"main" to 2L,
+			"main" to 3L,
+			"second" to 2L,
+			"second" to 4L
+		))
+	}
+
 }
 
 private inline fun <reified T> treeSetOf(vararg values: T): TreeSet<T> = TreeSet<T>(setOf(*values))

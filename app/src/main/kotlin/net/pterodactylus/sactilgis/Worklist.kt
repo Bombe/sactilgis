@@ -5,40 +5,39 @@ import java.util.SortedSet
 class Worklist(private val branchRevisions: Map<String, SortedSet<Long>> = emptyMap(), private val branchCreationPoints: Map<String, Pair<String, Long>> = emptyMap(), private val branchMergePoints: Map<String, Map<Long, Pair<String, Long>>> = emptyMap()) {
 
 	fun createPlan(): List<Pair<String, Long>> {
-		val nodes = mutableMapOf<Long, MutableList<Long>>()
+		val nodes = mutableMapOf<Pair<String, Long>, MutableList<Pair<String, Long>>>()
 		var lastBranch = ""
 		var lastRevision = -1L
 		branchRevisions.flatMap { branchRevision -> branchRevision.value.map { branchRevision.key to it } }.forEach { (branch, revision) ->
 			if (lastBranch != branch) {
-				nodes[revision] = mutableListOf()
+				nodes[branch to revision] = mutableListOf()
 				lastBranch = branch
 			} else {
-				nodes.getOrPut(revision) { mutableListOf() } += lastRevision
+				nodes.getOrPut(branch to revision) { mutableListOf() } += branch to lastRevision
 			}
 			lastRevision = revision
 		}
 		branchCreationPoints.forEach { newBranch, (oldBranch, revision) ->
 			val firstRevisionOfNewBranch = branchRevisions[newBranch]!!.first()
 			val actualRevisionInOldBranch = branchRevisions[oldBranch]!!.headSet(revision + 1).last()
-			nodes.getOrPut(firstRevisionOfNewBranch) { mutableListOf() } += actualRevisionInOldBranch
+			nodes.getOrPut(newBranch to firstRevisionOfNewBranch) { mutableListOf() } += oldBranch to actualRevisionInOldBranch
 		}
 		branchMergePoints.forEach { (targetBranch, merges) ->
 			merges.forEach { mergeRevision, (branchToMerge, revisionToMerge) ->
 				val actualRevisionInBranchToMerge = branchRevisions[branchToMerge]!!.headSet(revisionToMerge + 1).last()
-				nodes.getOrPut(mergeRevision) { mutableListOf() } += actualRevisionInBranchToMerge
+				nodes.getOrPut(targetBranch to mergeRevision) { mutableListOf() } += branchToMerge to actualRevisionInBranchToMerge
 			}
 		}
-		return depthFirstSort(branchRevisions.values.flatten().toSet(), nodes)
-			.map { revision -> findBranchForRevision(revision) to revision }
+		return depthFirstSort(nodes)
 	}
 
 	// shamelessly taken from https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
-	private fun depthFirstSort(graph: Set<Long>, nodes: MutableMap<Long, MutableList<Long>>): List<Long> {
-		val permanentMarks = mutableSetOf<Long>()
-		val temporaryMarks = mutableSetOf<Long>()
-		val sortedNodes = mutableListOf<Long>()
+	private fun depthFirstSort(nodes: MutableMap<Pair<String, Long>, MutableList<Pair<String, Long>>>): List<Pair<String, Long>> {
+		val permanentMarks = mutableSetOf<Pair<String, Long>>()
+		val temporaryMarks = mutableSetOf<Pair<String, Long>>()
+		val sortedNodes = mutableListOf<Pair<String, Long>>()
 
-		fun visit(node: Long) {
+		fun visit(node: Pair<String, Long>) {
 			if (node in permanentMarks) {
 				return
 			}
