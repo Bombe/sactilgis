@@ -120,12 +120,15 @@ class RepositoryScannerTest {
 	}
 
 	@Test
-	fun `ambiguous paths are matched longest first`() {
+	fun `ambiguous paths are matched by complete path`() {
 		simpleSvn.createCommit("testuser", "create directory") { commit ->
 			commit.addDirectory("/project1")
 		}
 		simpleSvn.createCommit("testuser", "create directory") { commit ->
 			commit.addDirectory("/project12")
+		}
+		simpleSvn.createCommit("testuser", "create directory") { commit ->
+			commit.addDirectory("/project123")
 		}
 		repositoryScanner.addBranch("p1", BranchDefinition(1L to "/project1"))
 		repositoryScanner.addBranch("p12", BranchDefinition(1L to "/project12"))
