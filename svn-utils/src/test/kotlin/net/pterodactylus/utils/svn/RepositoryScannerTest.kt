@@ -9,7 +9,6 @@ import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.tmatesoft.svn.core.SVNURL
-import org.tmatesoft.svn.core.io.SVNRepository
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory
 import java.io.File
 import java.nio.file.Files
